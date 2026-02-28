@@ -189,6 +189,17 @@ export default function GeneratePage() {
                   ))}
                 </div>
               </div>
+
+              {/* Privacy notice */}
+              <div className="max-w-md mx-auto bg-muted/30 border border-border rounded-lg p-4">
+                <p className="text-xs text-muted-foreground text-center">
+                  <span className="font-medium text-foreground">Privacy:</span>{" "}
+                  File contents are sent to Anthropic (Claude) and Google (Gemini) APIs
+                  to generate your card. Files are processed in memory and never stored.
+                  API keys and secrets are automatically redacted before processing.
+                  Do not upload files containing sensitive personal information.
+                </p>
+              </div>
             </div>
           )}
 

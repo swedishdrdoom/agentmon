@@ -5,13 +5,69 @@ import type { ParsedInput, ContentDepth } from "./types";
 
 const TEXT_EXTENSIONS = [".md", ".txt", ".json", ".yaml", ".yml"];
 
+/**
+ * Files that should NEVER be processed, even inside zips.
+ * These may contain secrets, credentials, or private keys.
+ */
+const SENSITIVE_FILE_PATTERNS = [
+  /^\.env/i,               // .env, .env.local, .env.production, etc.
+  /credentials/i,          // credentials.json, credentials.yaml, etc.
+  /\.pem$/i,               // Private keys
+  /\.key$/i,               // Private keys
+  /\.p12$/i,               // PKCS#12 keystores
+  /\.pfx$/i,               // PFX certificates
+  /secret/i,               // secrets.json, secret.yaml, etc.
+  /\.ssh/i,                // SSH config/keys
+  /id_rsa/i,               // SSH keys
+  /id_ed25519/i,           // SSH keys
+  /token\.json$/i,         // OAuth tokens
+  /\.netrc$/i,             // Network credentials
+  /\.npmrc$/i,             // npm tokens
+  /\.pypirc$/i,            // PyPI tokens
+];
+
+function isSensitiveFile(name: string): boolean {
+  const basename = name.split("/").pop() || name;
+  return SENSITIVE_FILE_PATTERNS.some((pattern) => pattern.test(basename));
+}
+
 function isTextFile(name: string): boolean {
   const lower = name.toLowerCase();
   return TEXT_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
 /**
+ * Redact strings that look like API keys, tokens, or secrets.
+ * Replaces them with [REDACTED] to prevent leaking to third-party APIs.
+ */
+function redactSecrets(content: string): string {
+  return content
+    // API keys with common prefixes (sk-, api-, key-, token-, etc.)
+    .replace(/\b(sk-[a-zA-Z0-9_-]{20,})\b/g, "[REDACTED_API_KEY]")
+    .replace(/\b(sk-ant-[a-zA-Z0-9_-]{20,})\b/g, "[REDACTED_API_KEY]")
+    .replace(/\b(AIza[a-zA-Z0-9_-]{20,})\b/g, "[REDACTED_API_KEY]")
+    .replace(/\b(ghp_[a-zA-Z0-9]{36,})\b/g, "[REDACTED_TOKEN]")
+    .replace(/\b(gho_[a-zA-Z0-9]{36,})\b/g, "[REDACTED_TOKEN]")
+    .replace(/\b(github_pat_[a-zA-Z0-9_]{22,})\b/g, "[REDACTED_TOKEN]")
+    .replace(/\b(xox[bposa]-[a-zA-Z0-9-]{10,})\b/g, "[REDACTED_TOKEN]")
+    .replace(/\b(Bearer\s+[a-zA-Z0-9._-]{20,})\b/g, "Bearer [REDACTED_TOKEN]")
+    // Generic patterns: KEY=value, TOKEN=value, SECRET=value, PASSWORD=value
+    .replace(/((?:API_?KEY|TOKEN|SECRET|PASSWORD|PRIVATE_KEY|ACCESS_KEY|AUTH)\s*[=:]\s*)[^\s\n"']{8,}/gi, "$1[REDACTED]")
+    // AWS keys
+    .replace(/\b(AKIA[A-Z0-9]{16})\b/g, "[REDACTED_AWS_KEY]")
+    // Long base64 strings that look like tokens (40+ chars, no spaces)
+    .replace(/\b([a-zA-Z0-9+/]{40,}={0,2})\b/g, (match) => {
+      // Only redact if it looks like a token (mixed case, no common words)
+      if (/[a-z]/.test(match) && /[A-Z]/.test(match) && /[0-9]/.test(match)) {
+        return "[REDACTED_TOKEN]";
+      }
+      return match;
+    });
+}
+
+/**
  * Extract text content from uploaded files, including .zip archives.
+ * Filters out sensitive files and redacts secrets from content.
  * Returns an array of { name, content } for each text file found.
  */
 export async function extractFiles(
@@ -20,6 +76,9 @@ export async function extractFiles(
   const results: { name: string; content: string }[] = [];
 
   for (const file of files) {
+    // Skip sensitive files at the top level
+    if (isSensitiveFile(file.name)) continue;
+
     if (file.name.toLowerCase().endsWith(".zip")) {
       // Unzip and extract text files
       const buffer = await file.arrayBuffer();
@@ -29,14 +88,16 @@ export async function extractFiles(
       for (const [path, zipEntry] of entries) {
         if (zipEntry.dir) continue;
         const fileName = path.split("/").pop() || path;
+        // Skip sensitive files inside zips
+        if (isSensitiveFile(fileName) || isSensitiveFile(path)) continue;
         if (isTextFile(fileName)) {
           const content = await zipEntry.async("string");
-          results.push({ name: fileName, content });
+          results.push({ name: fileName, content: redactSecrets(content) });
         }
       }
     } else if (isTextFile(file.name)) {
       const content = await file.text();
-      results.push({ name: file.name, content });
+      results.push({ name: file.name, content: redactSecrets(content) });
     }
   }
 
