@@ -48,7 +48,7 @@ async function tryGenerateWithModel(
       systemInstruction: {
         parts: [
           {
-            text: "You are generating a single trading card illustration. Prioritize visual clarity and simplicity above all else. One creature, one background, minimal effects. The creature should have a clear readable silhouette against a simple environment. Avoid visual clutter, overlapping effects, excessive detail, floating UI elements, holographic overlays, and digital/tech imagery. Think of classic trading card art: bold creature, clean background, strong composition. Less is more.",
+            text: "You are generating a single trading card illustration. Prioritize visual clarity and simplicity above all else. One entity, one background, minimal effects. The entity should have a clear readable silhouette against a simple environment. Avoid visual clutter, overlapping effects, excessive detail, floating UI elements, holographic overlays, and digital/tech imagery. Think of classic trading card art: bold entity, clean background, strong composition. Less is more.",
           },
         ],
       },

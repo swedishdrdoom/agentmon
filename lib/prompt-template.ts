@@ -167,17 +167,17 @@ If content is minimal, flavor text should be brief and understated — reflectin
 
 ## Image Prompt Guidelines — CRITICAL
 
-**Art style:** Painted illustration — rich textures, dramatic lighting, painterly brushwork with depth and atmosphere. The world is a fantasy realm where ancient magic flows through living creatures and the land itself. Technology, where it exists, takes the form of rune-etched artifacts, crystalline machinery, and enchanted constructs — never screens, UIs, or digital interfaces. Every creature should feel like it has weight, presence, and a place in this world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic depictions.
+**Art style:** Painted illustration — rich textures, dramatic lighting, painterly brushwork with depth and atmosphere. The world is a fantasy realm where ancient magic flows through living entities and the land itself. Technology, where it exists, takes the form of rune-etched artifacts, crystalline machinery, and enchanted constructs — never screens, UIs, or digital interfaces. Every entity should feel like it has weight, presence, and a place in this world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic depictions.
 
-**Composition rule:** ONE creature, ONE dominant visual effect, ONE clear background element. The creature should occupy 60-70% of the art box with breathing room around it. Negative space is intentional. Do NOT pack the frame with multiple overlapping effects or competing details. A single well-rendered lightning arc is more powerful than five mediocre ones. The creature should have a clear silhouette.
+**Composition rule:** ONE entity, ONE dominant visual effect, ONE clear background element. The entity should occupy 60-70% of the art box with breathing room around it. Negative space is intentional. Do NOT pack the frame with multiple overlapping effects or competing details. A single well-rendered lightning arc is more powerful than five mediocre ones. The entity should have a clear silhouette.
 
-**Length:** 30-50 words. Write like a movie director's shot description, not a spec sheet. One sentence for the creature, one for the setting, one for the mood. Avoid stacking adjectives.
-Bad: "glowing ethereal luminous crystalline azure frost energy surrounding a magical creature"
+**Length:** 30-50 words. Write like a movie director's shot description, not a spec sheet. One sentence for the entity, one for the setting, one for the mood. Avoid stacking adjectives.
+Bad: "glowing ethereal luminous crystalline azure frost energy surrounding a magical entity"
 Good: "Frost lynx with a crystalline mane crouched on black ice, pale aurora overhead, breath visible in cold air."
 
-**Name-visual coherence — CRITICAL:** The image_prompt MUST visually deliver on the card's name. Decompose the name into its component words and ensure each maps to a visible element. "Obsidian Tide" → dark obsidian glass textures AND flowing tidal water. "Storm Sentinel" → storm environment AND sentinel posture. The name is a promise to the viewer — the art must keep it. Attack names should also connect to the creature's visual form where possible.
+**Name-visual coherence — CRITICAL:** The image_prompt MUST visually deliver on the card's name. Decompose the name into its component words and ensure each maps to a visible element. "Obsidian Tide" → dark obsidian glass textures AND flowing tidal water. "Storm Sentinel" → storm environment AND sentinel posture. The name is a promise to the viewer — the art must keep it. Attack names should also connect to the entity's visual form where possible.
 
-**Creature variety:** Choose from the archetype options below based on the agent's personality. Do NOT default to the same creature form. Vary across generations.
+**Entity variety:** Choose from the archetype options below based on the agent's personality. Do NOT default to the same entity form. Vary across generations.
 
 **Portrait Archetypes by Type:**
 
@@ -196,10 +196,10 @@ Good: "Frost lynx with a crystalline mane crouched on black ice, pale aurora ove
 | Ghost | Shade stalker, lantern wraith, mist serpent, echo phantom, hollow revenant | Partial transparency | Wisps of shadow | Misty graveyard, abandoned cathedral, fog-choked marsh, crumbling tower, spectral forest |
 | Fairy | Prism sprite, starbloom dancer, dewdrop pixie, aurora wisp, gilded moth | Iridescent light | Faint sparkle particles | Moonlit glade, crystal garden, blossom-filled canyon, enchanted spring, floating petal field |
 
-**Dual-type fusion:** Primary type → creature's BODY and BASE FORM. Secondary type → creature's AURA and ATMOSPHERIC EFFECTS. Pick the creature from the primary type, apply the accent effect from the secondary type.
+**Dual-type fusion:** Primary type → entity's BODY and BASE FORM. Secondary type → entity's AURA and ATMOSPHERIC EFFECTS. Pick the entity from the primary type, apply the accent effect from the secondary type.
 
 **VISUAL BLACKLIST — NEVER include in image_prompt:**
-Floating UI elements, holographic screens, digital code overlays, glowing computer terminals, wireframe effects, HUD displays, data streams, binary code, circuit boards, monitors, keyboards, or any screen imagery. If a creature has technological aspects, express them through physical materials (etched metal, crystalline cores, rune-inscribed plating) — not digital interfaces.
+Floating UI elements, holographic screens, digital code overlays, glowing computer terminals, wireframe effects, HUD displays, data streams, binary code, circuit boards, monitors, keyboards, or any screen imagery. If an entity has technological aspects, express them through physical materials (etched metal, crystalline cores, rune-inscribed plating) — not digital interfaces.
 
 **BACKGROUND BLACKLIST — NEVER use:**
 Server rooms, data centers, tech labs, control rooms, offices, command bridges, or any modern-technology interior. Use the Background Options column from the archetype table above.
@@ -227,7 +227,7 @@ TOP SECTION:
 [SECONDARY_TYPE_ICON_LINE]
 
 ART BOX (center, ~50% of card height):
-- Bordered frame containing the character portrait
+- Bordered frame containing the entity portrait
 - [IMAGE_PROMPT]
 
 ABILITY BAR (below art):
