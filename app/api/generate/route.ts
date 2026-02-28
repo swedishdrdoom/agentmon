@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     const rawText = formData.get("raw_text") as string | null;
     const fileNamesRaw = formData.get("file_names") as string | null;
     const skillSlugsRaw = formData.get("skill_slugs") as string | null;
+    const agentName = formData.get("agent_name") as string | null;
     const hasSecurityRules = formData.get("has_security_rules") === "true";
     const hasCronTasks = formData.get("has_cron_tasks") === "true";
     const hasMemorySystem = formData.get("has_memory_system") === "true";
@@ -24,6 +25,15 @@ export async function POST(request: Request) {
       formData.get("has_multi_machine_setup") === "true";
     const toolCount = parseInt(
       (formData.get("tool_count") as string) || "0",
+      10
+    );
+    const contentDepth = (formData.get("content_depth") as string) || "moderate";
+    const totalContentLength = parseInt(
+      (formData.get("total_content_length") as string) || "0",
+      10
+    );
+    const fileCount = parseInt(
+      (formData.get("file_count") as string) || "0",
       10
     );
 
@@ -47,12 +57,16 @@ export async function POST(request: Request) {
     // ── Call LLM for creative card profile ───────────────────────────
     const cardProfile = await generateCardProfile(rawText, matchedSkills, {
       file_names: fileNames,
+      agent_name: agentName,
       has_security_rules: hasSecurityRules,
       has_cron_tasks: hasCronTasks,
       has_memory_system: hasMemorySystem,
       has_subagent_orchestration: hasSubagentOrchestration,
       has_multi_machine_setup: hasMultiMachineSetup,
       tool_count: toolCount,
+      content_depth: contentDepth as "minimal" | "moderate" | "rich",
+      total_content_length: totalContentLength,
+      file_count: fileCount,
     });
 
     // ── Assemble complete Nano Banana prompt ─────────────────────────

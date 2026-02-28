@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { ParsedInput } from "./types";
+import type { ParsedInput, ContentDepth } from "./types";
 
 // ── File text extraction ─────────────────────────────────────────────
 
@@ -278,6 +278,51 @@ function hasMultiMachineSetup(text: string): boolean {
   return patterns.some((p) => p.test(text));
 }
 
+// ── Content Depth ────────────────────────────────────────────────────
+
+function calculateContentDepth(
+  totalLength: number,
+  fileCount: number
+): ContentDepth {
+  // Minimal: single short file or very little content
+  if (fileCount <= 1 && totalLength < 500) return "minimal";
+  if (totalLength < 200) return "minimal";
+
+  // Rich: multiple files with substantial content
+  if (fileCount >= 4 || totalLength >= 5000) return "rich";
+
+  // Moderate: everything in between
+  return "moderate";
+}
+
+// ── Default Name Generation ──────────────────────────────────────────
+
+/**
+ * Generate a deterministic unique number from content hash.
+ * Same input always produces the same number (1-999).
+ */
+function generateNameNumber(content: string): number {
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash + char) | 0; // Convert to 32-bit integer
+  }
+  // Map to 1-999 range
+  return (Math.abs(hash) % 999) + 1;
+}
+
+function resolveAgentName(
+  extracted: { name: string; content: string }[],
+  rawText: string
+): string | null {
+  const name = extractAgentName(extracted);
+  if (name) return name;
+
+  // Generate a deterministic fallback
+  const num = generateNameNumber(rawText);
+  return `Unknown #${String(num).padStart(3, "0")}`;
+}
+
 // ── Main parser ──────────────────────────────────────────────────────
 
 /**
@@ -294,7 +339,12 @@ export async function parseAgentFiles(files: File[]): Promise<ParsedInput> {
 
   const fileNames = extracted.map((f) => f.name);
   const skillSlugs = extractSkillSlugs(rawText);
-  const agentName = extractAgentName(extracted);
+  const agentName = resolveAgentName(extracted, rawText);
+  const totalContentLength = extracted.reduce(
+    (sum, f) => sum + f.content.length,
+    0
+  );
+  const fileCount = extracted.length;
 
   return {
     agent_name: agentName,
@@ -307,6 +357,9 @@ export async function parseAgentFiles(files: File[]): Promise<ParsedInput> {
     has_subagent_orchestration: hasSubagentOrchestration(rawText),
     has_multi_machine_setup: hasMultiMachineSetup(rawText),
     tool_count: countTools(rawText),
+    content_depth: calculateContentDepth(totalContentLength, fileCount),
+    total_content_length: totalContentLength,
+    file_count: fileCount,
   };
 }
 
@@ -325,8 +378,14 @@ export function parseFromRawText(
     content: files[i] || "",
   }));
 
+  const totalContentLength = extracted.reduce(
+    (sum, f) => sum + f.content.length,
+    0
+  );
+  const fileCount = extracted.length;
+
   return {
-    agent_name: extractAgentName(extracted),
+    agent_name: resolveAgentName(extracted, rawText),
     skill_slugs: extractSkillSlugs(rawText),
     has_security_rules: hasSecurityRules(rawText),
     has_cron_tasks: hasCronTasks(rawText),
@@ -334,5 +393,8 @@ export function parseFromRawText(
     has_subagent_orchestration: hasSubagentOrchestration(rawText),
     has_multi_machine_setup: hasMultiMachineSetup(rawText),
     tool_count: countTools(rawText),
+    content_depth: calculateContentDepth(totalContentLength, fileCount),
+    total_content_length: totalContentLength,
+    file_count: fileCount,
   };
 }

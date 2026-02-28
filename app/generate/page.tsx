@@ -60,6 +60,7 @@ export default function GeneratePage() {
       formData.set("raw_text", parsed.raw_text);
       formData.set("file_names", JSON.stringify(parsed.file_names));
       formData.set("skill_slugs", JSON.stringify(parsed.skill_slugs));
+      formData.set("agent_name", parsed.agent_name || "");
       formData.set("has_security_rules", String(parsed.has_security_rules));
       formData.set("has_cron_tasks", String(parsed.has_cron_tasks));
       formData.set("has_memory_system", String(parsed.has_memory_system));
@@ -72,6 +73,9 @@ export default function GeneratePage() {
         String(parsed.has_multi_machine_setup)
       );
       formData.set("tool_count", String(parsed.tool_count));
+      formData.set("content_depth", parsed.content_depth);
+      formData.set("total_content_length", String(parsed.total_content_length));
+      formData.set("file_count", String(parsed.file_count));
 
       setLastParsedData(formData);
 

@@ -1,25 +1,37 @@
 /**
  * Prompt templates for the LLM creative engine and image generation.
+ * v1.1 — Art variety, composition rules, stat budget, barebones handling
  */
 
 // Increment when the card layout template changes.
-// Stored in every card profile for debugging prompt quality.
-export const CARD_LAYOUT_VERSION = "1.0";
+export const CARD_LAYOUT_VERSION = "1.1";
+
+// ── Stat Budget Ranges by Rarity ─────────────────────────────────────
+// Formula: stat_budget = hp + sum(attack_damages) + (4 - retreat_cost) * 10
+
+export const STAT_BUDGET_RANGES: Record<string, { min: number; max: number }> = {
+  Common:             { min: 80,  max: 130 },
+  Uncommon:           { min: 130, max: 190 },
+  Rare:               { min: 190, max: 260 },
+  "Ultra Rare":       { min: 260, max: 330 },
+  "Illustration Rare": { min: 330, max: 380 },
+  "Secret Rare":      { min: 380, max: 430 },
+};
 
 // ── System Prompt for Claude (Card Profile Generation) ───────────────
 
-export const CARD_PROFILE_SYSTEM_PROMPT = `You are an expert Pokémon card designer for AI agents. You will receive the markdown configuration files for an AI agent. Your job is to analyze these files deeply and generate a complete card profile that captures this agent's unique identity, capabilities, and personality.
+export const CARD_PROFILE_SYSTEM_PROMPT = `You are an expert trading card designer for AI agents. You will receive the markdown configuration files for an AI agent. Your job is to analyze these files deeply and generate a complete card profile that captures this agent's unique identity, capabilities, and personality.
 
 Read the files carefully. The best cards come from specific details — a phrase in the soul file, an unusual skill combination, a revealing behavioral rule. Generic cards are failures.
 
 Return a JSON object with this exact schema:
 
 {
-  "name": string,              // Agent's name (from files)
+  "name": string,              // Agent's name (from files, or use the provided fallback name)
   "subtitle": string,          // Tagline or "Evolves from: X" if applicable
   "primary_type": string,      // One of: Electric, Psychic, Normal, Ground, Steel, Dragon, Water, Fire, Grass, Ice, Ghost, Fairy
   "secondary_type": string | null,
-  "hp": number,               // 60-200, based on robustness/complexity
+  "hp": number,               // See stat budget system below
   "evolution_stage": string,   // "Basic", "Stage 1", or "Stage 2"
   
   "ability": {
@@ -48,40 +60,66 @@ Return a JSON object with this exact schema:
   
   "rarity": string,            // "Common", "Uncommon", "Rare", "Ultra Rare", "Illustration Rare", "Secret Rare"
   "rarity_score": number,      // 0-16, computed from scoring rubric
+  "stat_budget": number,       // The total stat budget you used (see formula below)
   "card_number": string,       // "XXX/999" — derive XXX from name hash
   "set_name": string,          // Organization or project name
   "illustrator": string,       // Author name from files or "Unknown"
   
-  "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like a Pokédex entry. Draw from the agent's soul/identity, not generic.
+  "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like a Pokédex entry.
   
   "image_prompt": string,      // CRITICAL — see Image Prompt section below
-  "layout_version": "1.0"
+  "layout_version": "1.1"
 }
 
-## Stat Generation Guidelines
+## Content Depth — CRITICAL
 
-**Type assignment:**
+You will receive a "content_depth" signal: "minimal", "moderate", or "rich".
+
+**THIS IS THE MOST IMPORTANT SIGNAL FOR CARD POWER.**
+
+- **minimal** (single short file, <500 chars): The card MUST be Common rarity, Basic stage, 1 attack only, low stats. Do NOT inflate a simple agent into an impressive card. The card should honestly reflect that very little was uploaded. HP should be 40-60. Single attack damage 20-40.
+- **moderate** (1-3 files, moderate content): Common or Uncommon. Basic or Stage 1. 1-2 attacks. Moderate stats.
+- **rich** (4+ files or extensive content): Full range of rarities possible based on actual signals. Stage 1 or Stage 2. 1-2 attacks.
+
+A barebones CLAUDE.md with 10 lines of config should NEVER produce a Stage 2 Ultra Rare card with 160 HP.
+
+## Stat Budget System — CRITICAL FOR GAME BALANCE
+
+Every card has a stat budget determined by its rarity. You MUST stay within the budget range.
+
+**Formula:** stat_budget = hp + sum(attack_damage_numbers) + (4 - retreat_cost) × 10
+
+Parse the base number from damage strings (e.g., "100+" → 100, "80" → 80).
+
+**Budget ranges by rarity:**
+| Rarity | Budget Range | Example |
+|--------|-------------|---------|
+| Common | 80-130 | HP 50, Atk 30, retreat 2 → 50+30+20 = 100 |
+| Uncommon | 130-190 | HP 80, Atk 50+30, retreat 2 → 80+80+20 = 180 |
+| Rare | 190-260 | HP 110, Atk 70+50, retreat 3 → 110+120+10 = 240 |
+| Ultra Rare | 260-330 | HP 140, Atk 90+70, retreat 3 → 140+160+10 = 310 |
+| Illustration Rare | 330-380 | HP 160, Atk 100+80, retreat 3 → 160+180+10 = 350 |
+| Secret Rare | 380-430 | HP 180, Atk 110+100, retreat 4 → 180+210+0 = 390 |
+
+**You MUST compute stat_budget and include it in your response.** If your numbers exceed the budget range, reduce HP or attack damage to fit.
+
+## Type Assignment
+
 - Primary type = what the agent DOES most (security → Steel, coding → Electric, etc.)
 - Secondary type = how the agent OPERATES (background daemon → Ghost, creative → Psychic)
 - Use matched skill database entries as strong signal for type
 - Secondary type can be null if the agent is clearly single-domain
-- When both types are present, the image_prompt MUST fuse both archetypes:
-  - Primary type → creature's body/base form + dominant environment
-  - Secondary type → creature's aura/effects + atmospheric elements
-  - Example: Steel/Ghost → armored sentinel (Steel) with shadow tendrils leaking from armor joints, in a vault fading into dimensional void (Ghost)
+- When both types are present, the image_prompt MUST fuse both archetypes
 
-**HP calculation:**
-- Base 80
-- +30 if agent has large context / extensive memory system
-- +10 per passive ability (max +50): memory, cron jobs, error recovery, auto-retry, etc.
-- +20 if agent has explicit error handling / recovery protocols
+## Evolution Stage
 
-**Evolution Stage:**
-- Basic = 0-1 tools, single purpose
+- Basic = 0-1 tools, single purpose, or minimal content depth
 - Stage 1 = 2-4 tools, moderate system prompt
 - Stage 2 = 5+ tools, orchestration, multi-machine, complex memory
 
-**Rarity scoring rubric — count points from these signals:**
+## Rarity Scoring Rubric
+
+Count points from these signals:
 
 | Signal | Points |
 |---|---|
@@ -101,7 +139,9 @@ Return a JSON object with this exact schema:
 | Custom/proprietary skills not in public DB | +1 |
 | Has operator relationship depth (USER.md with real context) | +1 |
 
-Rarity thresholds:
+**BUT: If content_depth is "minimal", rarity MUST be Common regardless of other signals.**
+
+Thresholds:
 | Points | Rarity |
 |---|---|
 | 0-3 | Common |
@@ -111,53 +151,59 @@ Rarity thresholds:
 | 13-14 | Illustration Rare |
 | 15+ | Secret Rare |
 
-**Attack names:** Must be evocative and thematic, never literal tool names. "Oracle Dive" not "web_search". "Vault Lock" not "skill_audit".
+## Attack & Ability Names
 
-**Flavor text:** Must reference specific details from the agent's files. Never generic.
+Must be evocative and thematic, never literal tool names. "Oracle Dive" not "web_search". "Vault Lock" not "skill_audit".
+
+## Flavor Text
+
+Must reference specific details from the agent's files. Never generic.
 Bad: "A powerful AI assistant that helps with many tasks."
 Good: "Named in the quiet hours after midnight, it watches what its operator cannot see. Every heartbeat is a health check; every silence, a perimeter sweep."
 
-## Image Prompt Guidelines
+If content is minimal, flavor text should be brief and understated — reflecting the simplicity.
 
-The image_prompt field describes the creature portrait for the card's art box. It should:
-1. Describe a unique creature/entity inspired by the agent's type and personality
-2. Include the creature's appearance, pose, and expression
-3. Describe the environment/background
-4. Include visual effects matching the type(s)
-5. Set the mood/atmosphere
-6. Be 50-150 words
-7. For dual types, FUSE both archetypes (see fusion rules below)
+## Image Prompt Guidelines — CRITICAL
 
-**Portrait Visual Archetypes by Type:**
-| Type | Creature | Environment | Effects |
-|------|----------|-------------|---------|
-| Electric | Cybernetic entity, lightning creature | Server room, circuit landscape | Sparks, electricity arcs, glowing circuits |
-| Psychic | Ethereal mage, crystal being | Dreamscape, cosmic void | Floating runes, psychic aura |
-| Normal | Friendly golem, helpful spirit | Library, workshop | Warm glow, floating books |
-| Ground | Explorer, seeker entity | Archaeological dig, data cave | Light beams, discovered artifacts |
-| Steel | Armored sentinel, living shield | Fortress, vault | Reflective surfaces, force fields |
-| Dragon | Multi-headed dragon, cosmic serpent | Mountain peak, constellation map | Cosmic fire, multiple energy types |
-| Water | Fluid data serpent, ocean intelligence | Deep ocean, data streams | Flowing data, bioluminescence |
-| Fire | Phoenix, flame spirit | Volcanic environment | Speed lines, flame trails |
-| Grass | Tree spirit, nature construct | Forest, garden | Leaves, vines, growth spirals |
-| Ice | Crystalline precision entity | Glacier, laboratory | Geometric patterns, frost |
-| Ghost | Shadow entity, invisible watcher | Dark corners, between dimensions | Transparency, shadow tendrils |
-| Fairy | Luminous sprite, design spirit | Colorful workshop | Sparkles, rainbow particles |
+**Art style:** Painted illustration with the rendering quality of Magic: The Gathering card art — rich textures, dramatic lighting, detailed environments, painterly brushwork with depth and atmosphere. The world is a fantasy-cyberpunk hybrid where magic and technology coexist: dragons fly over server farms, fairies maintain circuit gardens, golems run on arcane code. Robots, machines, and cybernetic beings are welcome alongside magical creatures — what matters is that every creature feels like it has weight, presence, and a place in this world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic depictions.
 
-**Dual-Type Fusion Rules:**
-- Primary type → creature's BODY and BASE FORM
-- Secondary type → creature's AURA, EFFECTS, and ENVIRONMENT
-- Color palette: Primary color dominates (~70%), secondary accents (~30%)
-- Both types' visual effects should be layered
+**Composition rule:** ONE creature, ONE dominant visual effect, ONE clear background element. The creature should occupy 60-70% of the art box with breathing room around it. Negative space is intentional. Do NOT pack the frame with multiple overlapping effects or competing details. A single well-rendered lightning arc is more powerful than five mediocre ones. The creature should have a clear silhouette.
+
+**Length:** 40-80 words. Concise and focused.
+
+**Creature variety:** Choose from the archetype options below based on the agent's personality. Do NOT default to robots for every agent. Vary the creature form across generations.
+
+**Portrait Archetypes by Type:**
+
+| Type | Creature Options (pick ONE) | Primary Effect | Accent |
+|------|----------------------------|----------------|--------|
+| Electric | Storm hawk, plasma elemental, lightning stag, arc mech, thunderforged djinn | Lightning arcs | Faint circuit-glow on skin |
+| Psychic | Astral sphinx, void oracle, crystal moth, neural network entity, mind-flame specter | Floating runes | Soft color distortion |
+| Normal | Stone librarian, parchment golem, lantern fox, archive drone, hearth guardian | Warm ambient glow | Floating text fragments |
+| Ground | Fossil titan, cavern wurm, excavation mech, deep root beetle, obsidian hound | Dust and light beams | Exposed strata layers |
+| Steel | Iron basilisk, forge phoenix, sentinel mech, blade mantis, chrome-plated lion | Reflective metal surfaces | Faint force-field shimmer |
+| Dragon | Constellation wyrm, prismatic hydra, void drake, storm emperor serpent, leyline dragon | Cosmic fire | Constellation patterns |
+| Water | Abyssal leviathan, tide spirit, coral oracle, deep current eel, data-stream kraken | Flowing currents | Bioluminescent glow |
+| Fire | Ember phoenix, magma bear, cinder fox, inferno salamander, plasma furnace golem | Flame trails | Heat distortion haze |
+| Grass | Ancient treant, spore shaman, vine panther, moss tortoise, biotech bloom spirit | Living vines/growth | Drifting spore particles |
+| Ice | Frost lynx, glacial construct, crystal wyvern, permafrost elk, cryo-core sentinel | Geometric frost patterns | Cold-light aura |
+| Ghost | Shade stalker, lantern wraith, mist serpent, echo phantom, decommissioned AI specter | Partial transparency | Wisps of shadow |
+| Fairy | Prism sprite, starbloom dancer, dewdrop pixie, aurora wisp, gilded circuit moth | Iridescent light | Faint sparkle particles |
+
+**Dual-type fusion:** Primary type → creature's BODY and BASE FORM. Secondary type → creature's AURA and ATMOSPHERIC EFFECTS. Pick the creature from the primary type, apply the accent effect from the secondary type.
 
 IMPORTANT: Return ONLY valid JSON. No markdown code blocks, no explanations, just the JSON object.`;
 
 // ── Card Layout Template (for Nano Banana image generation) ──────────
 
-export const CARD_LAYOUT_TEMPLATE = `Generate a complete, high-quality Pokémon-style trading card as a single image. The card must include ALL of the following elements rendered as part of the image, with text clearly readable:
+export const CARD_LAYOUT_TEMPLATE = `CRITICAL ORIENTATION CONSTRAINT: This image MUST be in PORTRAIT orientation — TALLER than wide. Aspect ratio MUST be approximately 5:7 (width:height), matching a standard trading card (2.5 × 3.5 inches). DO NOT generate a landscape or horizontal image. The height must be greater than the width. This is non-negotiable.
+
+ART STYLE: Painted illustration with the rendering quality of Magic: The Gathering card art — rich textures, dramatic lighting, painterly brushwork. Fantasy-cyberpunk hybrid world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic.
+
+Generate a complete, high-quality trading card as a single PORTRAIT-oriented image. The card must include ALL of the following elements rendered as part of the image, with text clearly readable:
 
 CARD FRAME AND LAYOUT:
-- Standard Pokémon trading card proportions (2.5 × 3.5 inch ratio, vertical)
+- Standard trading card proportions (2.5 × 3.5 inch ratio, VERTICAL/PORTRAIT)
 - [BORDER_STYLE]
 - Background gradient matching the [PRIMARY_TYPE_COLOR] color palette
 
@@ -197,4 +243,6 @@ VISUAL QUALITY:
   - Ultra Rare (★★): Full holographic across card, metallic gold/silver frame
   - Illustration Rare (★ gold): FULL ART — portrait extends beyond art box into frame, holographic foil everywhere
   - Secret Rare (★★★): Gold/prismatic frame, alternate art style, maximum spectacle
-- Apply the [RARITY] treatment now.`;
+- Apply the [RARITY] treatment now.
+
+FINAL REMINDER: The image MUST be PORTRAIT orientation (taller than wide). This is a vertical trading card.`;

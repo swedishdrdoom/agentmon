@@ -73,6 +73,11 @@ export const SkillEntrySchema = z.object({
 
 export type SkillEntry = z.infer<typeof SkillEntrySchema>;
 
+// ── Content Depth ────────────────────────────────────────────────────
+
+export const CONTENT_DEPTHS = ["minimal", "moderate", "rich"] as const;
+export type ContentDepth = (typeof CONTENT_DEPTHS)[number];
+
 // ── Parser Output ────────────────────────────────────────────────────
 
 export const ParsedInputSchema = z.object({
@@ -86,6 +91,9 @@ export const ParsedInputSchema = z.object({
   has_subagent_orchestration: z.boolean(),
   has_multi_machine_setup: z.boolean(),
   tool_count: z.number(),
+  content_depth: z.enum(CONTENT_DEPTHS),
+  total_content_length: z.number(),
+  file_count: z.number(),
 });
 
 export type ParsedInput = z.infer<typeof ParsedInputSchema>;
@@ -104,7 +112,7 @@ export const CardProfileSchema = z.object({
   subtitle: z.string(),
   primary_type: z.enum(CARD_TYPES),
   secondary_type: z.enum(CARD_TYPES).nullable(),
-  hp: z.number().min(60).max(200),
+  hp: z.number().min(40).max(200),
   evolution_stage: z.enum(["Basic", "Stage 1", "Stage 2"]),
 
   ability: z.object({
@@ -126,13 +134,14 @@ export const CardProfileSchema = z.object({
 
   rarity: z.enum(RARITIES),
   rarity_score: z.number().min(0).max(16),
+  stat_budget: z.number().min(0).max(500),
   card_number: z.string(),
   set_name: z.string(),
   illustrator: z.string(),
 
   flavor_text: z.string(),
   image_prompt: z.string(),
-  layout_version: z.literal("1.0"),
+  layout_version: z.literal("1.1"),
 });
 
 export type CardProfile = z.infer<typeof CardProfileSchema>;

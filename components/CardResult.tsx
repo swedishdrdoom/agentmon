@@ -79,7 +79,7 @@ export function CardResult({
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-muted-foreground text-xs uppercase tracking-wider">
               HP
@@ -108,6 +108,14 @@ export function CardResult({
             </p>
             <p className="text-xl font-bold">
               {cardProfile.rarity_score}/16
+            </p>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-muted-foreground text-xs uppercase tracking-wider">
+              Budget
+            </p>
+            <p className="text-xl font-bold">
+              {cardProfile.stat_budget}
             </p>
           </div>
         </div>
