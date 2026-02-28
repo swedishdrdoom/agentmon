@@ -1,12 +1,12 @@
 "use client";
 
-import type { CardProfile } from "@/lib/types";
+import type { FullCardProfile } from "@/lib/types";
 import { TYPE_METADATA, RARITY_SYMBOLS } from "@/lib/types";
 import { DownloadButtons } from "./DownloadButtons";
 
 interface CardResultProps {
   cardImageBase64: string;
-  cardProfile: CardProfile;
+  cardProfile: FullCardProfile;
   imagePrompt: string;
   onRegenerate: () => void;
   onStartOver: () => void;
@@ -154,8 +154,8 @@ export function CardResult({
             &ldquo;{cardProfile.flavor_text}&rdquo;
           </p>
           <p className="text-xs text-muted-foreground/60 mt-2">
-            Illus. {cardProfile.illustrator} &middot; {cardProfile.card_number}{" "}
-            &middot; {cardProfile.set_name}
+            #{cardProfile.serial_number} &middot; Illus.{" "}
+            {cardProfile.illustrator}
           </p>
         </div>
       </div>

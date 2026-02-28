@@ -189,6 +189,14 @@ export async function generateCardProfile(
     (parsed as Record<string, unknown>).stat_budget = 0;
   }
 
+  // Strip fields that the LLM may still generate from old prompt versions.
+  // card_number and set_name are replaced by serial_number (added post-LLM from KV).
+  if (typeof parsed === "object" && parsed !== null) {
+    const obj = parsed as Record<string, unknown>;
+    delete obj.card_number;
+    delete obj.set_name;
+  }
+
   const result = CardProfileSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error(

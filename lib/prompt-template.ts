@@ -61,8 +61,6 @@ Return a JSON object with this exact schema:
   "rarity": string,            // "Common", "Uncommon", "Rare", "Ultra Rare", "Illustration Rare", "Secret Rare"
   "rarity_score": number,      // 0-16, computed from scoring rubric
   "stat_budget": number,       // The total stat budget you used (see formula below)
-  "card_number": string,       // "XXX/999" — derive XXX from name hash
-  "set_name": string,          // Organization or project name
   "illustrator": string,       // Author name from files or "Unknown"
   
   "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like a Pokédex entry.
@@ -229,7 +227,7 @@ BOTTOM STATS BAR:
 - Three columns: "weakness [WEAKNESS_TYPE_ICON] ×2" | "resistance [RESISTANCE_TYPE_ICON] -30" | "retreat [RETREAT_DOTS]"
 
 FOOTER:
-- Bottom left: "Illus. [ILLUSTRATOR]" and set icon + "[CARD_NUMBER]" + [RARITY_SYMBOL]
+- Bottom left: "#[SERIAL_NUMBER]" in small bold text, then "Illus. [ILLUSTRATOR]" + [RARITY_SYMBOL]
 - Bottom right: "[FLAVOR_TEXT]" in small italic
 
 VISUAL QUALITY:

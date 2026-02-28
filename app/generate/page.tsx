@@ -6,13 +6,13 @@ import { FileUploader } from "@/components/FileUploader";
 import { GeneratingState } from "@/components/GeneratingState";
 import { CardResult } from "@/components/CardResult";
 import { parseAgentFiles } from "@/lib/parser";
-import type { CardProfile } from "@/lib/types";
+import type { FullCardProfile } from "@/lib/types";
 
 type ViewState = "upload" | "generating" | "result" | "error";
 
 interface GenerationResult {
   card_image: string;
-  card_profile: CardProfile;
+  card_profile: FullCardProfile;
   image_prompt: string;
   layout_version: string;
 }

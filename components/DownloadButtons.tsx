@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { CardProfile } from "@/lib/types";
+import type { FullCardProfile } from "@/lib/types";
 
 interface DownloadButtonsProps {
   cardImageBase64: string;
-  cardProfile: CardProfile;
+  cardProfile: FullCardProfile;
   imagePrompt: string;
 }
 

@@ -3,6 +3,7 @@ import { lookupSkills } from "@/lib/skills-db";
 import { generateCardProfile } from "@/lib/llm";
 import { assemblePrompt, getLayoutVersion } from "@/lib/assemble-prompt";
 import { generateCardImage } from "@/lib/image-gen";
+import { getNextSerialNumber } from "@/lib/serial";
 
 // Allow up to 60 seconds for the full pipeline (LLM + image gen)
 export const maxDuration = 60;
@@ -69,8 +70,12 @@ export async function POST(request: Request) {
       file_count: fileCount,
     });
 
+    // ── Assign unique serial number ─────────────────────────────────
+    const serialNumber = await getNextSerialNumber();
+    const cardProfileWithSerial = { ...cardProfile, serial_number: serialNumber };
+
     // ── Assemble complete Nano Banana prompt ─────────────────────────
-    const imagePrompt = assemblePrompt(cardProfile);
+    const imagePrompt = assemblePrompt(cardProfileWithSerial);
 
     // ── Generate card image via Nano Banana ──────────────────────────
     const cardImageBase64 = await generateCardImage(imagePrompt);
@@ -78,7 +83,7 @@ export async function POST(request: Request) {
     // ── Return everything ────────────────────────────────────────────
     return NextResponse.json({
       card_image: cardImageBase64,
-      card_profile: cardProfile,
+      card_profile: cardProfileWithSerial,
       image_prompt: imagePrompt,
       layout_version: getLayoutVersion(),
     });

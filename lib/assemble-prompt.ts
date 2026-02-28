@@ -1,7 +1,7 @@
 import {
   TYPE_METADATA,
   RARITY_SYMBOLS,
-  type CardProfile,
+  type FullCardProfile,
   type CardType,
 } from "./types";
 import { CARD_LAYOUT_TEMPLATE, CARD_LAYOUT_VERSION } from "./prompt-template";
@@ -20,7 +20,7 @@ function getTypeColor(type: CardType): string {
   return TYPE_METADATA[type].color;
 }
 
-function buildBorderStyle(profile: CardProfile): string {
+function buildBorderStyle(profile: FullCardProfile): string {
   if (profile.secondary_type) {
     const primaryHex = getTypeHex(profile.primary_type);
     const secondaryHex = getTypeHex(profile.secondary_type);
@@ -29,14 +29,14 @@ function buildBorderStyle(profile: CardProfile): string {
   return `Solid ${profile.primary_type} colored border (${getTypeHex(profile.primary_type)}) with metallic edge effect`;
 }
 
-function buildSecondaryTypeIconLine(profile: CardProfile): string {
+function buildSecondaryTypeIconLine(profile: FullCardProfile): string {
   if (profile.secondary_type) {
     return `- Show a smaller ${getTypeIcon(profile.secondary_type)} ${profile.secondary_type} type icon next to the primary ${getTypeIcon(profile.primary_type)} icon`;
   }
   return "";
 }
 
-function buildAttackRows(profile: CardProfile): string {
+function buildAttackRows(profile: FullCardProfile): string {
   const rows: string[] = [];
 
   rows.push("ATTACK ROWS:");
@@ -63,7 +63,7 @@ function buildRetreatDots(retreatCost: number): string {
  * Combines the card profile JSON from the LLM with the card layout template
  * to produce a complete Nano Banana image generation prompt.
  */
-export function assemblePrompt(cardProfile: CardProfile): string {
+export function assemblePrompt(cardProfile: FullCardProfile): string {
   const prompt = CARD_LAYOUT_TEMPLATE
     // Border
     .replace("[BORDER_STYLE]", buildBorderStyle(cardProfile))
@@ -88,8 +88,8 @@ export function assemblePrompt(cardProfile: CardProfile): string {
     .replace("[RESISTANCE_TYPE_ICON]", `${getTypeIcon(cardProfile.resistance.type as CardType)} ${cardProfile.resistance.type}`)
     .replace("[RETREAT_DOTS]", buildRetreatDots(cardProfile.retreat_cost))
     // Footer
+    .replace("[SERIAL_NUMBER]", String(cardProfile.serial_number))
     .replace("[ILLUSTRATOR]", cardProfile.illustrator)
-    .replace("[CARD_NUMBER]", cardProfile.card_number)
     .replace("[RARITY_SYMBOL]", RARITY_SYMBOLS[cardProfile.rarity])
     .replace("[FLAVOR_TEXT]", cardProfile.flavor_text)
     // Rarity treatment (replace both occurrences)

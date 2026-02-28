@@ -135,8 +135,6 @@ export const CardProfileSchema = z.object({
   rarity: z.enum(RARITIES),
   rarity_score: z.number().min(0).max(16),
   stat_budget: z.number().min(0).max(500),
-  card_number: z.string(),
-  set_name: z.string(),
   illustrator: z.string(),
 
   flavor_text: z.string(),
@@ -144,13 +142,23 @@ export const CardProfileSchema = z.object({
   layout_version: z.literal("1.1"),
 });
 
+/** Card profile as returned by the LLM (no serial number yet). */
 export type CardProfile = z.infer<typeof CardProfileSchema>;
 
-// ── API Response ─────────────────────────────────────────────────────
+// ── Card Profile with Serial Number ─────────────────────────────
+
+/** Extends the LLM card profile with a globally unique serial number from KV. */
+export const FullCardProfileSchema = CardProfileSchema.extend({
+  serial_number: z.number().int().min(1),
+});
+
+export type FullCardProfile = z.infer<typeof FullCardProfileSchema>;
+
+// ── API Response ─────────────────────────────────────────────────
 
 export const GenerateResponseSchema = z.object({
   card_image: z.string(), // base64 PNG
-  card_profile: CardProfileSchema,
+  card_profile: FullCardProfileSchema,
   image_prompt: z.string(),
   layout_version: z.string(),
 });
