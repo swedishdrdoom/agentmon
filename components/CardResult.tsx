@@ -37,7 +37,7 @@ export function CardResult({
             className="max-w-sm w-full rounded-xl shadow-2xl shadow-primary/10 border border-white/5"
           />
           {/* Holographic overlay effect for rare+ cards */}
-          {["Rare", "Ultra Rare", "Illustration Rare", "Secret Rare"].includes(
+          {["Rare", "Epic", "Legendary", "Hyper Rare", "Singularity"].includes(
             cardProfile.rarity
           ) && (
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-transparent via-white/5 to-transparent pointer-events-none group-hover:via-white/10 transition-all" />
@@ -79,7 +79,7 @@ export function CardResult({
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-muted-foreground text-xs uppercase tracking-wider">
               HP
@@ -100,14 +100,6 @@ export function CardResult({
             </p>
             <p className="text-xl font-bold">
               {RARITY_SYMBOLS[cardProfile.rarity]} {cardProfile.rarity}
-            </p>
-          </div>
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-muted-foreground text-xs uppercase tracking-wider">
-              Score
-            </p>
-            <p className="text-xl font-bold">
-              {cardProfile.rarity_score}/16
             </p>
           </div>
           <div className="bg-muted/50 rounded-lg p-3">

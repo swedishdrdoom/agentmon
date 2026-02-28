@@ -122,7 +122,7 @@ export default function GeneratePage() {
       <header className="border-b border-border px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-lg font-bold hover:text-primary transition-colors">
-            Agentmon <span className="text-sm text-muted-foreground font-normal">v1.2</span>
+            Agentmon <span className="text-sm text-muted-foreground font-normal">v1.3</span>
           </Link>
           {viewState !== "upload" && (
             <button

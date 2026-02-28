@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { CardProfileSchema, TYPE_METADATA, type CardProfile, type CardType, type SkillEntry, type ContentDepth } from "./types";
-import { CARD_PROFILE_SYSTEM_PROMPT, STAT_BUDGET_RANGES } from "./prompt-template";
+import { CardProfileSchema, TYPE_METADATA, type CardProfile, type CardType, type Rarity, type SkillEntry, type ContentDepth } from "./types";
+import { CARD_PROFILE_SYSTEM_PROMPT } from "./prompt-template";
+import { hasExpandedVariance } from "./rarity";
 
 // ── Brand Name Sanitization ──────────────────────────────────────────
 
@@ -115,7 +116,7 @@ function enforceEnergyCost(profile: CardProfile): CardProfile {
   return { ...profile, attacks: newAttacks };
 }
 
-// ── Stat Budget Utilities ────────────────────────────────────────────
+// ── Stat Utilities ───────────────────────────────────────────────────
 
 function parseDamageNumber(damage: string): number {
   // "100+" → 100, "80" → 80, "30×2" → 60
@@ -132,48 +133,20 @@ function computeStatBudget(profile: CardProfile): number {
   return profile.hp + totalAttackDamage + retreatValue;
 }
 
-function clampStatBudget(profile: CardProfile): CardProfile {
-  const range = STAT_BUDGET_RANGES[profile.rarity];
-  if (!range) return profile;
+/**
+ * Clamps HP to the universal tight band and recomputes stat_budget.
+ * Standard tiers: 60-160 HP. Hyper Rare / Singularity: 50-180 HP.
+ */
+function clampStats(profile: CardProfile): CardProfile {
+  const expanded = hasExpandedVariance(profile.rarity);
+  const hpMin = expanded ? 50 : 60;
+  const hpMax = expanded ? 180 : 160;
 
-  const currentBudget = computeStatBudget(profile);
+  const clampedHp = Math.max(hpMin, Math.min(hpMax, profile.hp));
+  const result = { ...profile, hp: clampedHp };
+  result.stat_budget = computeStatBudget(result);
 
-  // If within range, just update the stat_budget field
-  if (currentBudget >= range.min && currentBudget <= range.max) {
-    return { ...profile, stat_budget: currentBudget };
-  }
-
-  // Need to clamp — scale HP and attack damages proportionally
-  const targetBudget = currentBudget > range.max ? range.max : range.min;
-  const retreatValue = (4 - profile.retreat_cost) * 10;
-  const availableForStats = targetBudget - retreatValue;
-
-  // Calculate current proportions
-  const totalAttackDamage = profile.attacks.reduce(
-    (sum, atk) => sum + parseDamageNumber(atk.damage),
-    0
-  );
-  const totalStats = profile.hp + totalAttackDamage;
-
-  if (totalStats === 0) return { ...profile, stat_budget: targetBudget };
-
-  const ratio = availableForStats / totalStats;
-
-  // Scale HP
-  const newHp = Math.max(40, Math.min(200, Math.round(profile.hp * ratio)));
-
-  // Scale attacks
-  const newAttacks = profile.attacks.map((atk) => {
-    const baseDmg = parseDamageNumber(atk.damage);
-    const newDmg = Math.max(10, Math.round(baseDmg * ratio));
-    const suffix = atk.damage.includes("+") ? "+" : "";
-    return { ...atk, damage: `${newDmg}${suffix}` };
-  });
-
-  const clamped = { ...profile, hp: newHp, attacks: newAttacks };
-  const finalBudget = computeStatBudget(clamped);
-
-  return { ...clamped, stat_budget: finalBudget };
+  return result;
 }
 
 // ── Build the user message for Claude ────────────────────────────────
@@ -181,6 +154,7 @@ function clampStatBudget(profile: CardProfile): CardProfile {
 function buildUserMessage(
   rawText: string,
   matchedSkills: SkillEntry[],
+  assignedRarity: Rarity,
   parsedSignals: {
     file_names: string[];
     agent_name: string | null;
@@ -196,6 +170,10 @@ function buildUserMessage(
   }
 ): string {
   let message = `## Agent Configuration Files\n\n${rawText}\n\n`;
+
+  message += `## Assigned Rarity — DO NOT CHANGE\n`;
+  message += `This card's rarity is: "${assignedRarity}"\n`;
+  message += `Use this EXACT rarity in your JSON response. Do NOT change it based on content depth or agent complexity. Rarity is cosmetic only.\n\n`;
 
   message += `## Parser Signals\n`;
   message += `- Files uploaded: ${parsedSignals.file_names.join(", ")}\n`;
@@ -224,7 +202,8 @@ function buildUserMessage(
   }
 
   message += `Generate the card profile JSON now. Remember:\n`;
-  message += `- Content depth is "${parsedSignals.content_depth}" — match card power accordingly\n`;
+  message += `- Rarity is "${assignedRarity}" — use it exactly, do not change it\n`;
+  message += `- Content depth is "${parsedSignals.content_depth}" — match card STATS accordingly (not rarity)\n`;
   message += `- Compute and include stat_budget in your response\n`;
   message += `- Return ONLY valid JSON, no markdown code blocks.`;
 
@@ -248,7 +227,8 @@ export async function generateCardProfile(
     content_depth: ContentDepth;
     total_content_length: number;
     file_count: number;
-  }
+  },
+  assignedRarity: Rarity
 ): Promise<CardProfile> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -260,7 +240,7 @@ export async function generateCardProfile(
 
   const client = new Anthropic({ apiKey });
 
-  const userMessage = buildUserMessage(rawText, matchedSkills, parsedSignals);
+  const userMessage = buildUserMessage(rawText, matchedSkills, assignedRarity, parsedSignals);
 
   const response = await client.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -303,11 +283,16 @@ export async function generateCardProfile(
   }
 
   // Strip fields that the LLM may still generate from old prompt versions.
-  // card_number and set_name are replaced by serial_number (added post-LLM from KV).
   if (typeof parsed === "object" && parsed !== null) {
     const obj = parsed as Record<string, unknown>;
     delete obj.card_number;
     delete obj.set_name;
+    delete obj.rarity_score;
+  }
+
+  // Force-override rarity to match the server-side roll (in case Claude changed it)
+  if (typeof parsed === "object" && parsed !== null) {
+    (parsed as Record<string, unknown>).rarity = assignedRarity;
   }
 
   const result = CardProfileSchema.safeParse(parsed);
@@ -318,7 +303,7 @@ export async function generateCardProfile(
   }
 
   // Apply post-processing pipeline
-  const clamped = clampStatBudget(result.data);
+  const clamped = clampStats(result.data);
   const sanitized = sanitizeBrandNames(clamped);
   const enforced = enforceEnergyCost(sanitized);
 

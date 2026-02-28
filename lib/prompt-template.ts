@@ -1,22 +1,10 @@
 /**
  * Prompt templates for the LLM creative engine and image generation.
- * v1.1 — Art variety, composition rules, stat budget, barebones handling
+ * v1.3 — Random rarity, new 7-tier system, cosmetic-only rarity, universal stat band
  */
 
 // Increment when the card layout template changes.
-export const CARD_LAYOUT_VERSION = "1.2";
-
-// ── Stat Budget Ranges by Rarity ─────────────────────────────────────
-// Formula: stat_budget = hp + sum(attack_damages) + (4 - retreat_cost) * 10
-
-export const STAT_BUDGET_RANGES: Record<string, { min: number; max: number }> = {
-  Common:             { min: 80,  max: 130 },
-  Uncommon:           { min: 130, max: 190 },
-  Rare:               { min: 190, max: 260 },
-  "Ultra Rare":       { min: 260, max: 330 },
-  "Illustration Rare": { min: 330, max: 380 },
-  "Secret Rare":      { min: 380, max: 430 },
-};
+export const CARD_LAYOUT_VERSION = "1.3";
 
 // ── System Prompt for Claude (Card Profile Generation) ───────────────
 
@@ -35,7 +23,7 @@ Return a JSON object with this exact schema:
   "subtitle": string,          // Tagline or "Evolves from: X" if applicable
   "primary_type": string,      // One of: Electric, Psychic, Normal, Ground, Steel, Dragon, Water, Fire, Grass, Ice, Ghost, Fairy
   "secondary_type": string | null,
-  "hp": number,               // See stat budget system below
+  "hp": number,               // 60-160. Content depth determines where in this range. See Stats section.
   "evolution_stage": string,   // "Basic", "Stage 1", or "Stage 2"
   
   "ability": {
@@ -62,48 +50,45 @@ Return a JSON object with this exact schema:
   },
   "retreat_cost": number,      // 0-4 energy icons
   
-  "rarity": string,            // "Common", "Uncommon", "Rare", "Ultra Rare", "Illustration Rare", "Secret Rare"
-  "rarity_score": number,      // 0-16, computed from scoring rubric
-  "stat_budget": number,       // The total stat budget you used (see formula below)
+  "rarity": string,            // You will be GIVEN a rarity. Echo it back exactly. Do NOT change it.
+  "stat_budget": number,       // Computed: hp + sum(attack_damages) + (4 - retreat_cost) × 10
   "illustrator": string,       // Author name from files or "Unknown"
   
   "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like an ancient bestiary entry.
   
   "image_prompt": string,      // CRITICAL — see Image Prompt section below
-  "layout_version": "1.2"
+  "layout_version": "1.3"
 }
 
-## Content Depth — CRITICAL
+## Rarity — ASSIGNED BY SYSTEM, NOT BY YOU
+
+You will receive an "assigned_rarity" value in the input. This is rolled server-side by RNG.
+
+**You MUST use this exact rarity in your response. Do NOT change it.** Do NOT compute rarity from the agent's content. Rarity is purely cosmetic — it affects the card's visual treatment (frame, foil, border effects) but NOT the card's stats or power level.
+
+The possible rarity tiers are: "Common", "Uncommon", "Rare", "Epic", "Legendary", "Hyper Rare", "Singularity".
+
+**For Singularity cards:** The image_prompt must use an INVERTED color palette — dark becomes light, light becomes dark. Ethereal, void-like rendering. The entity should appear as a luminous negative, like a photographic inverse where the form glows against darkness. This is the rarest tier in the game and must look unmistakably otherworldly.
+
+## Content Depth — DRIVES STATS, NOT RARITY
 
 You will receive a "content_depth" signal: "minimal", "moderate", or "rich".
 
-**THIS IS THE MOST IMPORTANT SIGNAL FOR CARD POWER.**
+Content depth determines the card's STATS and COMPLEXITY, but NOT its rarity (rarity is assigned by the system).
 
-- **minimal** (single short file, <500 chars): The card MUST be Common rarity, Basic stage, 1 attack only, low stats. Do NOT inflate a simple agent into an impressive card. The card should honestly reflect that very little was uploaded. HP should be 40-60. Single attack damage 20-40.
-- **moderate** (1-3 files, moderate content): Common or Uncommon. Basic or Stage 1. 1-2 attacks. Moderate stats.
-- **rich** (4+ files or extensive content): Full range of rarities possible based on actual signals. Stage 1 or Stage 2. 1-2 attacks.
+- **minimal** (single short file, <500 chars): Basic stage, 1 attack only, low stats. HP 60-80. Single attack damage 20-40. The card should honestly reflect that very little was uploaded.
+- **moderate** (1-3 files, moderate content): Basic or Stage 1. 1-2 attacks. HP 80-120. Moderate stats.
+- **rich** (4+ files or extensive content): Stage 1 or Stage 2. 1-2 attacks. HP 100-160. Full stat range.
 
-A barebones CLAUDE.md with 10 lines of config should NEVER produce a Stage 2 Ultra Rare card with 160 HP.
+A barebones file with 10 lines should produce low stats regardless of what rarity was rolled.
 
-## Stat Budget System — CRITICAL FOR GAME BALANCE
+## Stats — Universal Tight Band
 
-Every card has a stat budget determined by its rarity. You MUST stay within the budget range.
+HP must be between 60-160. Content depth determines where in this range.
 
 **Formula:** stat_budget = hp + sum(attack_damage_numbers) + (4 - retreat_cost) × 10
 
-Parse the base number from damage strings (e.g., "100+" → 100, "80" → 80).
-
-**Budget ranges by rarity:**
-| Rarity | Budget Range | Example |
-|--------|-------------|---------|
-| Common | 80-130 | HP 50, Atk 30, retreat 2 → 50+30+20 = 100 |
-| Uncommon | 130-190 | HP 80, Atk 50+30, retreat 2 → 80+80+20 = 180 |
-| Rare | 190-260 | HP 110, Atk 70+50, retreat 3 → 110+120+10 = 240 |
-| Ultra Rare | 260-330 | HP 140, Atk 90+70, retreat 3 → 140+160+10 = 310 |
-| Illustration Rare | 330-380 | HP 160, Atk 100+80, retreat 3 → 160+180+10 = 350 |
-| Secret Rare | 380-430 | HP 180, Atk 110+100, retreat 4 → 180+210+0 = 390 |
-
-**You MUST compute stat_budget and include it in your response.** If your numbers exceed the budget range, reduce HP or attack damage to fit.
+Compute and include stat_budget in your response. Stats are driven by content, not rarity.
 
 ## Type Assignment
 
@@ -118,40 +103,6 @@ Parse the base number from damage strings (e.g., "100+" → 100, "80" → 80).
 - Basic = 0-1 tools, single purpose, or minimal content depth
 - Stage 1 = 2-4 tools, moderate system prompt
 - Stage 2 = 5+ tools, orchestration, multi-machine, complex memory
-
-## Rarity Scoring Rubric
-
-Count points from these signals:
-
-| Signal | Points |
-|---|---|
-| Tool count: 0-3 | 0 |
-| Tool count: 4-7 | +1 |
-| Tool count: 8+ | +1 (capped) |
-| Has custom soul/personality file | +1 |
-| Soul has deep identity (lore, philosophy, named refs) | +1 |
-| Has explicit security rules | +1 |
-| Has memory system with daily persistence | +1 |
-| Has scheduled tasks (cron, heartbeats) | +1 |
-| Has multi-machine coordination | +2 |
-| Has subagent/swarm orchestration | +2 |
-| Has evolution history (renamed, versioned, pivoted) | +1 |
-| Has disaster recovery / resilience protocol | +1 |
-| Cross-domain skills (4+ distinct categories) | +1 |
-| Custom/proprietary skills not in public DB | +1 |
-| Has operator relationship depth (USER.md with real context) | +1 |
-
-**BUT: If content_depth is "minimal", rarity MUST be Common regardless of other signals.**
-
-Thresholds:
-| Points | Rarity |
-|---|---|
-| 0-3 | Common |
-| 4-6 | Uncommon |
-| 7-9 | Rare |
-| 10-12 | Ultra Rare |
-| 13-14 | Illustration Rare |
-| 15+ | Secret Rare |
 
 ## Attack & Ability Names
 
@@ -252,9 +203,10 @@ VISUAL QUALITY:
   - Common (●): Clean flat border, no effects, standard card
   - Uncommon (◆): Subtle metallic border sheen, richer colors
   - Rare (★): Holographic rainbow shimmer on border, foil texture
-  - Ultra Rare (★★): Full holographic across card, metallic gold/silver frame
-  - Illustration Rare (★ gold): FULL ART — portrait extends beyond art box into frame, holographic foil everywhere
-  - Secret Rare (★★★): Gold/prismatic frame, alternate art style, maximum spectacle
+  - Epic (★★): Gold/silver metallic frame, full holographic effect across card
+  - Legendary (★★★): Ornate gold frame, FULL ART — portrait extends beyond art box into frame
+  - Hyper Rare (✦): Prismatic frame, alternate art style, maximum spectacle, iridescent shimmer
+  - Singularity (◉): INVERTED color palette — dark becomes light, light becomes dark. Ethereal void-like rendering. Entity appears as luminous negative. Prismatic iridescent frame with chromatic aberration.
 - Apply the [RARITY] treatment now.
 
 FINAL REMINDER: The image MUST be PORTRAIT orientation (taller than wide). This is a vertical trading card.`;

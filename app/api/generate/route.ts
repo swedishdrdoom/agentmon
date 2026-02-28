@@ -4,6 +4,7 @@ import { generateCardProfile } from "@/lib/llm";
 import { assemblePrompt, getLayoutVersion } from "@/lib/assemble-prompt";
 import { generateCardImage } from "@/lib/image-gen";
 import { getNextSerialNumber } from "@/lib/serial";
+import { rollRarity } from "@/lib/rarity";
 
 // Allow up to 60 seconds for the full pipeline (LLM + image gen)
 export const maxDuration = 60;
@@ -55,6 +56,10 @@ export async function POST(request: Request) {
     // ── Cross-reference skills database ──────────────────────────────
     const matchedSkills = lookupSkills(skillSlugs);
 
+    // ── Roll rarity (pure server-side RNG) ───────────────────────────
+    const rarity = rollRarity();
+    console.log(`[generate] Rolled rarity: ${rarity}`);
+
     // ── Call LLM for creative card profile ───────────────────────────
     const cardProfile = await generateCardProfile(rawText, matchedSkills, {
       file_names: fileNames,
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
       content_depth: contentDepth as "minimal" | "moderate" | "rich",
       total_content_length: totalContentLength,
       file_count: fileCount,
-    });
+    }, rarity);
 
     // ── Assign unique serial number ─────────────────────────────────
     const serialNumber = await getNextSerialNumber();

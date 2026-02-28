@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// ── Pokemon-style Types ──────────────────────────────────────────────
+// ── Card Element Types ───────────────────────────────────────────────
 
 export const CARD_TYPES = [
   "Electric",
@@ -43,9 +43,10 @@ export const RARITIES = [
   "Common",
   "Uncommon",
   "Rare",
-  "Ultra Rare",
-  "Illustration Rare",
-  "Secret Rare",
+  "Epic",
+  "Legendary",
+  "Hyper Rare",
+  "Singularity",
 ] as const;
 
 export type Rarity = (typeof RARITIES)[number];
@@ -54,9 +55,10 @@ export const RARITY_SYMBOLS: Record<Rarity, string> = {
   Common: "●",
   Uncommon: "◆",
   Rare: "★",
-  "Ultra Rare": "★★",
-  "Illustration Rare": "★(gold)",
-  "Secret Rare": "★★★",
+  Epic: "★★",
+  Legendary: "★★★",
+  "Hyper Rare": "✦",
+  Singularity: "◉",
 };
 
 // ── Skills Database ──────────────────────────────────────────────────
@@ -112,7 +114,7 @@ export const CardProfileSchema = z.object({
   subtitle: z.string(),
   primary_type: z.enum(CARD_TYPES),
   secondary_type: z.enum(CARD_TYPES).nullable(),
-  hp: z.number().min(40).max(200),
+  hp: z.number().min(50).max(180),
   evolution_stage: z.enum(["Basic", "Stage 1", "Stage 2"]),
 
   ability: z.object({
@@ -133,13 +135,12 @@ export const CardProfileSchema = z.object({
   retreat_cost: z.number().min(0).max(4),
 
   rarity: z.enum(RARITIES),
-  rarity_score: z.number().min(0).max(16),
   stat_budget: z.number().min(0).max(500),
   illustrator: z.string(),
 
   flavor_text: z.string(),
   image_prompt: z.string(),
-  layout_version: z.literal("1.2"),
+  layout_version: z.literal("1.3"),
 });
 
 /** Card profile as returned by the LLM (no serial number yet). */
