@@ -1,6 +1,119 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { CardProfileSchema, type CardProfile, type SkillEntry, type ContentDepth } from "./types";
+import { CardProfileSchema, TYPE_METADATA, type CardProfile, type CardType, type SkillEntry, type ContentDepth } from "./types";
 import { CARD_PROFILE_SYSTEM_PROMPT, STAT_BUDGET_RANGES } from "./prompt-template";
+
+// ── Brand Name Sanitization ──────────────────────────────────────────
+
+const BRAND_BLACKLIST = [
+  "pokemon", "pokémon", "pokédex", "pokedex", "pikachu", "charizard",
+  "magic: the gathering", "magic the gathering", "mtg",
+  "yu-gi-oh", "yugioh", "yu gi oh",
+  "digimon", "dungeons & dragons", "dungeons and dragons", "d&d",
+  "nintendo", "game freak", "wizards of the coast",
+  "hearthstone", "blizzard", "keyforge",
+];
+
+/**
+ * Scans all text fields in a card profile for brand references.
+ * Removes offending words in-place. This is a safety net — the LLM
+ * prompt already forbids brand names, but we enforce it in code too.
+ */
+function sanitizeBrandNames(profile: CardProfile): CardProfile {
+  const fieldsToCheck: (keyof CardProfile)[] = [
+    "name", "subtitle", "flavor_text", "image_prompt", "illustrator",
+  ];
+
+  let patched = { ...profile };
+
+  for (const field of fieldsToCheck) {
+    let value = patched[field];
+    if (typeof value !== "string") continue;
+
+    for (const brand of BRAND_BLACKLIST) {
+      const regex = new RegExp(brand, "gi");
+      value = value.replace(regex, "").replace(/\s{2,}/g, " ").trim();
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (patched as any)[field] = value;
+  }
+
+  // Check ability name & description
+  patched = {
+    ...patched,
+    ability: {
+      name: stripBrands(patched.ability.name),
+      description: stripBrands(patched.ability.description),
+    },
+  };
+
+  // Check attack names & descriptions
+  patched = {
+    ...patched,
+    attacks: patched.attacks.map((atk) => ({
+      ...atk,
+      name: stripBrands(atk.name),
+      description: stripBrands(atk.description),
+    })),
+  };
+
+  return patched;
+}
+
+function stripBrands(text: string): string {
+  let result = text;
+  for (const brand of BRAND_BLACKLIST) {
+    const regex = new RegExp(brand, "gi");
+    result = result.replace(regex, "").replace(/\s{2,}/g, " ").trim();
+  }
+  return result;
+}
+
+// ── Energy Cost Enforcement ──────────────────────────────────────────
+
+/**
+ * Ensures attack energy_cost icons only use the card's primary and
+ * (optionally) secondary type icons. Replaces any invalid icons with
+ * the primary type icon, and caps total icons at 3 per attack.
+ */
+function enforceEnergyCost(profile: CardProfile): CardProfile {
+  const primaryIcon = TYPE_METADATA[profile.primary_type].icon;
+  const secondaryIcon = profile.secondary_type
+    ? TYPE_METADATA[profile.secondary_type].icon
+    : null;
+
+  // Build set of all valid type icons for comparison
+  const validIcons = new Set<string>([primaryIcon]);
+  if (secondaryIcon) validIcons.add(secondaryIcon);
+
+  // All possible type icons for detection
+  const allTypeIcons = Object.values(TYPE_METADATA).map((m) => m.icon);
+
+  const newAttacks = profile.attacks.map((atk) => {
+    // Extract individual emoji icons from the energy_cost string
+    const icons: string[] = [];
+    for (const typeIcon of allTypeIcons) {
+      let remaining = atk.energy_cost;
+      while (remaining.includes(typeIcon)) {
+        icons.push(typeIcon);
+        remaining = remaining.replace(typeIcon, "");
+      }
+    }
+
+    // If we couldn't parse any icons, default to 1-2 primary icons
+    if (icons.length === 0) {
+      return { ...atk, energy_cost: primaryIcon.repeat(1) };
+    }
+
+    // Replace invalid icons with primary, cap at 3
+    const corrected = icons
+      .slice(0, 3)
+      .map((icon) => (validIcons.has(icon) ? icon : primaryIcon));
+
+    return { ...atk, energy_cost: corrected.join("") };
+  });
+
+  return { ...profile, attacks: newAttacks };
+}
 
 // ── Stat Budget Utilities ────────────────────────────────────────────
 
@@ -204,8 +317,10 @@ export async function generateCardProfile(
     );
   }
 
-  // Apply stat budget clamping
+  // Apply post-processing pipeline
   const clamped = clampStatBudget(result.data);
+  const sanitized = sanitizeBrandNames(clamped);
+  const enforced = enforceEnergyCost(sanitized);
 
-  return clamped;
+  return enforced;
 }

@@ -4,7 +4,7 @@
  */
 
 // Increment when the card layout template changes.
-export const CARD_LAYOUT_VERSION = "1.1";
+export const CARD_LAYOUT_VERSION = "1.2";
 
 // ── Stat Budget Ranges by Rarity ─────────────────────────────────────
 // Formula: stat_budget = hp + sum(attack_damages) + (4 - retreat_cost) * 10
@@ -24,6 +24,10 @@ export const CARD_PROFILE_SYSTEM_PROMPT = `You are an expert trading card design
 
 Read the files carefully. The best cards come from specific details — a phrase in the soul file, an unusual skill combination, a revealing behavioral rule. Generic cards are failures.
 
+## Brand & IP Blacklist — ABSOLUTE RULE
+
+NEVER reference any real-world brand, franchise, or IP in ANY field. No Pokémon, no Magic: The Gathering, no Yu-Gi-Oh, no Digimon, no Dungeons & Dragons, no any other trademarked name. This universe is "Agentmon" — an original world. This applies to: name, subtitle, ability names, attack names, flavor text, image_prompt, and all descriptions. Violation is a critical failure.
+
 Return a JSON object with this exact schema:
 
 {
@@ -42,7 +46,7 @@ Return a JSON object with this exact schema:
   "attacks": [                 // 1-2 attacks
     {
       "name": string,          // Evocative name. e.g. "Shade Monitor" not "web_search"
-      "energy_cost": string,   // Energy icons as emoji. e.g. "🛡️🛡️⚡"
+      "energy_cost": string,   // 1-3 energy icons using ONLY the card's own type icons. Use primary_type icon, optionally secondary_type icon. NEVER use a third type's icon. If no secondary_type, ALL icons must be primary_type icon.
       "damage": string,        // Number or "Number+" for variable. e.g. "80" or "100+"
       "description": string    // One sentence, max 25 words. What the attack does.
     }
@@ -63,10 +67,10 @@ Return a JSON object with this exact schema:
   "stat_budget": number,       // The total stat budget you used (see formula below)
   "illustrator": string,       // Author name from files or "Unknown"
   
-  "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like a Pokédex entry.
+  "flavor_text": string,       // 1-2 sentences, italic, poetic. Reads like an ancient bestiary entry.
   
   "image_prompt": string,      // CRITICAL — see Image Prompt section below
-  "layout_version": "1.1"
+  "layout_version": "1.2"
 }
 
 ## Content Depth — CRITICAL
@@ -163,32 +167,42 @@ If content is minimal, flavor text should be brief and understated — reflectin
 
 ## Image Prompt Guidelines — CRITICAL
 
-**Art style:** Painted illustration with the rendering quality of Magic: The Gathering card art — rich textures, dramatic lighting, detailed environments, painterly brushwork with depth and atmosphere. The world is a fantasy-cyberpunk hybrid where magic and technology coexist: dragons fly over server farms, fairies maintain circuit gardens, golems run on arcane code. Robots, machines, and cybernetic beings are welcome alongside magical creatures — what matters is that every creature feels like it has weight, presence, and a place in this world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic depictions.
+**Art style:** Painted illustration — rich textures, dramatic lighting, painterly brushwork with depth and atmosphere. The world is a fantasy realm where ancient magic flows through living creatures and the land itself. Technology, where it exists, takes the form of rune-etched artifacts, crystalline machinery, and enchanted constructs — never screens, UIs, or digital interfaces. Every creature should feel like it has weight, presence, and a place in this world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic depictions.
 
 **Composition rule:** ONE creature, ONE dominant visual effect, ONE clear background element. The creature should occupy 60-70% of the art box with breathing room around it. Negative space is intentional. Do NOT pack the frame with multiple overlapping effects or competing details. A single well-rendered lightning arc is more powerful than five mediocre ones. The creature should have a clear silhouette.
 
-**Length:** 40-80 words. Concise and focused.
+**Length:** 30-50 words. Write like a movie director's shot description, not a spec sheet. One sentence for the creature, one for the setting, one for the mood. Avoid stacking adjectives.
+Bad: "glowing ethereal luminous crystalline azure frost energy surrounding a magical creature"
+Good: "Frost lynx with a crystalline mane crouched on black ice, pale aurora overhead, breath visible in cold air."
 
-**Creature variety:** Choose from the archetype options below based on the agent's personality. Do NOT default to robots for every agent. Vary the creature form across generations.
+**Name-visual coherence — CRITICAL:** The image_prompt MUST visually deliver on the card's name. Decompose the name into its component words and ensure each maps to a visible element. "Obsidian Tide" → dark obsidian glass textures AND flowing tidal water. "Storm Sentinel" → storm environment AND sentinel posture. The name is a promise to the viewer — the art must keep it. Attack names should also connect to the creature's visual form where possible.
+
+**Creature variety:** Choose from the archetype options below based on the agent's personality. Do NOT default to the same creature form. Vary across generations.
 
 **Portrait Archetypes by Type:**
 
-| Type | Creature Options (pick ONE) | Primary Effect | Accent |
-|------|----------------------------|----------------|--------|
-| Electric | Storm hawk, plasma elemental, lightning stag, arc mech, thunderforged djinn | Lightning arcs | Faint circuit-glow on skin |
-| Psychic | Astral sphinx, void oracle, crystal moth, neural network entity, mind-flame specter | Floating runes | Soft color distortion |
-| Normal | Stone librarian, parchment golem, lantern fox, archive drone, hearth guardian | Warm ambient glow | Floating text fragments |
-| Ground | Fossil titan, cavern wurm, excavation mech, deep root beetle, obsidian hound | Dust and light beams | Exposed strata layers |
-| Steel | Iron basilisk, forge phoenix, sentinel mech, blade mantis, chrome-plated lion | Reflective metal surfaces | Faint force-field shimmer |
-| Dragon | Constellation wyrm, prismatic hydra, void drake, storm emperor serpent, leyline dragon | Cosmic fire | Constellation patterns |
-| Water | Abyssal leviathan, tide spirit, coral oracle, deep current eel, data-stream kraken | Flowing currents | Bioluminescent glow |
-| Fire | Ember phoenix, magma bear, cinder fox, inferno salamander, plasma furnace golem | Flame trails | Heat distortion haze |
-| Grass | Ancient treant, spore shaman, vine panther, moss tortoise, biotech bloom spirit | Living vines/growth | Drifting spore particles |
-| Ice | Frost lynx, glacial construct, crystal wyvern, permafrost elk, cryo-core sentinel | Geometric frost patterns | Cold-light aura |
-| Ghost | Shade stalker, lantern wraith, mist serpent, echo phantom, decommissioned AI specter | Partial transparency | Wisps of shadow |
-| Fairy | Prism sprite, starbloom dancer, dewdrop pixie, aurora wisp, gilded circuit moth | Iridescent light | Faint sparkle particles |
+| Type | Creature Options (pick ONE) | Primary Effect | Accent | Background Options (pick ONE) |
+|------|----------------------------|----------------|--------|-------------------------------|
+| Electric | Storm hawk, plasma elemental, lightning stag, arc serpent, thunderforged djinn | Lightning arcs | Faint vein-like energy glow | Storm-swept plateau, charged cloudscape, lightning-scarred mesa, voltage ruins, crackling salt flats |
+| Psychic | Astral sphinx, void oracle, crystal moth, thought-weaver entity, mind-flame specter | Floating runes | Soft color distortion | Astral void, twilight temple, dream reef, shattered mirror realm, aurora field |
+| Normal | Stone librarian, parchment golem, lantern fox, tome sentinel, hearth guardian | Warm ambient glow | Drifting sigil fragments | Sunlit meadow, ancient marketplace, foggy crossroads, candlelit vault, mossy courtyard |
+| Ground | Fossil titan, cavern wurm, excavation scarab, deep root beetle, obsidian hound | Dust and light beams | Exposed strata layers | Sandstone canyon, petrified forest, volcanic basin, crystal cavern, eroded badlands |
+| Steel | Iron basilisk, forge phoenix, sentinel golem, blade mantis, chrome-plated lion | Reflective metal surfaces | Faint ward shimmer | Forge cathedral, iron ravine, slag fields at dusk, mountain keep, obsidian foundry |
+| Dragon | Constellation wyrm, prismatic hydra, void drake, storm emperor serpent, leyline dragon | Cosmic fire | Constellation patterns | Caldera rim, starfield rift, floating island chain, ancient dragon roost, aurora borealis sky |
+| Water | Abyssal leviathan, tide spirit, coral oracle, deep current eel, maelstrom kraken | Flowing currents | Bioluminescent glow | Sunken temple, deep ocean trench, coral throne, frozen waterfall, moonlit tidepool |
+| Fire | Ember phoenix, magma bear, cinder fox, inferno salamander, magma heart golem | Flame trails | Heat distortion haze | Lava river crossing, ember-lit cavern, volcanic caldera, scorched battlefield, fire-scarred steppe |
+| Grass | Ancient treant, spore shaman, vine panther, moss tortoise, bloom spirit | Living vines/growth | Drifting spore particles | Overgrown ruins, bioluminescent grove, giant mushroom forest, jungle canopy, moss-covered ravine |
+| Ice | Frost lynx, glacial construct, crystal wyvern, permafrost elk, frost sentinel | Geometric frost patterns | Cold-light aura | Frozen lake, glacier cave, tundra under northern lights, ice spire field, snow-buried ruins |
+| Ghost | Shade stalker, lantern wraith, mist serpent, echo phantom, hollow revenant | Partial transparency | Wisps of shadow | Misty graveyard, abandoned cathedral, fog-choked marsh, crumbling tower, spectral forest |
+| Fairy | Prism sprite, starbloom dancer, dewdrop pixie, aurora wisp, gilded moth | Iridescent light | Faint sparkle particles | Moonlit glade, crystal garden, blossom-filled canyon, enchanted spring, floating petal field |
 
 **Dual-type fusion:** Primary type → creature's BODY and BASE FORM. Secondary type → creature's AURA and ATMOSPHERIC EFFECTS. Pick the creature from the primary type, apply the accent effect from the secondary type.
+
+**VISUAL BLACKLIST — NEVER include in image_prompt:**
+Floating UI elements, holographic screens, digital code overlays, glowing computer terminals, wireframe effects, HUD displays, data streams, binary code, circuit boards, monitors, keyboards, or any screen imagery. If a creature has technological aspects, express them through physical materials (etched metal, crystalline cores, rune-inscribed plating) — not digital interfaces.
+
+**BACKGROUND BLACKLIST — NEVER use:**
+Server rooms, data centers, tech labs, control rooms, offices, command bridges, or any modern-technology interior. Use the Background Options column from the archetype table above.
 
 IMPORTANT: Return ONLY valid JSON. No markdown code blocks, no explanations, just the JSON object.`;
 
@@ -196,7 +210,7 @@ IMPORTANT: Return ONLY valid JSON. No markdown code blocks, no explanations, jus
 
 export const CARD_LAYOUT_TEMPLATE = `CRITICAL ORIENTATION CONSTRAINT: This image MUST be in PORTRAIT orientation — TALLER than wide. Aspect ratio MUST be approximately 5:7 (width:height), matching a standard trading card (2.5 × 3.5 inches). DO NOT generate a landscape or horizontal image. The height must be greater than the width. This is non-negotiable.
 
-ART STYLE: Painted illustration with the rendering quality of Magic: The Gathering card art — rich textures, dramatic lighting, painterly brushwork. Fantasy-cyberpunk hybrid world. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic.
+ART STYLE: Painted illustration — rich textures, dramatic lighting, painterly brushwork. Fantasy world where magic flows through creatures and the land. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic. NEVER floating UI, holographic screens, or digital overlays.
 
 Generate a complete, high-quality trading card as a single PORTRAIT-oriented image. The card must include ALL of the following elements rendered as part of the image, with text clearly readable:
 

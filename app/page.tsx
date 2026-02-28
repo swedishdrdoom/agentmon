@@ -15,7 +15,7 @@ export default function Home() {
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="space-y-4">
             <h1 className="text-5xl sm:text-6xl font-bold tracking-tight">
-              Agentmon <span className="text-2xl sm:text-3xl text-muted-foreground font-normal">v1.1</span>
+              Agentmon <span className="text-2xl sm:text-3xl text-muted-foreground font-normal">v1.2</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-lg mx-auto">
               Upload your AI agent&apos;s markdown files and get a unique,

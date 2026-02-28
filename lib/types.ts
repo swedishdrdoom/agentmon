@@ -139,7 +139,7 @@ export const CardProfileSchema = z.object({
 
   flavor_text: z.string(),
   image_prompt: z.string(),
-  layout_version: z.literal("1.1"),
+  layout_version: z.literal("1.2"),
 });
 
 /** Card profile as returned by the LLM (no serial number yet). */

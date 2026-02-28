@@ -45,6 +45,13 @@ async function tryGenerateWithModel(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      systemInstruction: {
+        parts: [
+          {
+            text: "You are generating a single trading card illustration. Prioritize visual clarity and simplicity above all else. One creature, one background, minimal effects. The creature should have a clear readable silhouette against a simple environment. Avoid visual clutter, overlapping effects, excessive detail, floating UI elements, holographic overlays, and digital/tech imagery. Think of classic trading card art: bold creature, clean background, strong composition. Less is more.",
+          },
+        ],
+      },
       contents: [
         {
           parts: [
