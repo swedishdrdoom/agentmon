@@ -5,6 +5,7 @@ import { assemblePrompt, getLayoutVersion } from "@/lib/assemble-prompt";
 import { generateCardImage } from "@/lib/image-gen";
 import { getNextSerialNumber } from "@/lib/serial";
 import { rollRarity } from "@/lib/rarity";
+import { RARITIES, type Rarity } from "@/lib/types";
 
 // Allow up to 60 seconds for the full pipeline (LLM + image gen)
 export const maxDuration = 60;
@@ -57,8 +58,16 @@ export async function POST(request: Request) {
     const matchedSkills = lookupSkills(skillSlugs);
 
     // ── Roll rarity (pure server-side RNG) ───────────────────────────
-    const rarity = rollRarity();
-    console.log(`[generate] Rolled rarity: ${rarity}`);
+    // Debug override: pass force_rarity in form data to test specific tiers
+    const forceRarity = formData.get("force_rarity") as string | null;
+    let rarity: Rarity;
+    if (forceRarity && (RARITIES as readonly string[]).includes(forceRarity)) {
+      rarity = forceRarity as Rarity;
+      console.log(`[generate] DEBUG: Forced rarity: ${rarity}`);
+    } else {
+      rarity = rollRarity();
+    }
+    console.log(`[generate] Rarity: ${rarity}`);
 
     // ── Call LLM for creative card profile ───────────────────────────
     const cardProfile = await generateCardProfile(rawText, matchedSkills, {

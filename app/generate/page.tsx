@@ -77,6 +77,13 @@ export default function GeneratePage() {
       formData.set("total_content_length", String(parsed.total_content_length));
       formData.set("file_count", String(parsed.file_count));
 
+      // Debug: allow forcing rarity via URL query param ?rarity=Singularity
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceRarity = urlParams.get("rarity");
+      if (forceRarity) {
+        formData.set("force_rarity", forceRarity);
+      }
+
       setLastParsedData(formData);
 
       const data = await generateCard(formData);
