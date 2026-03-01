@@ -29,9 +29,9 @@ function buildBorderStyle(profile: FullCardProfile): string {
   return `Solid ${profile.primary_type} colored border (${getTypeHex(profile.primary_type)}) with metallic edge effect`;
 }
 
-function buildSecondaryTypeIconLine(profile: FullCardProfile): string {
+function buildSecondaryTypeIconSuffix(profile: FullCardProfile): string {
   if (profile.secondary_type) {
-    return `- Show a smaller ${getTypeIcon(profile.secondary_type)} ${profile.secondary_type} type icon next to the primary ${getTypeIcon(profile.primary_type)} icon`;
+    return ` and ${getTypeIcon(profile.secondary_type)} ${profile.secondary_type} icon`;
   }
   return "";
 }
@@ -70,12 +70,11 @@ export function assemblePrompt(cardProfile: FullCardProfile): string {
     // Type colors
     .replace("[PRIMARY_TYPE_COLOR]", `${cardProfile.primary_type} (${getTypeColor(cardProfile.primary_type)}, ${getTypeHex(cardProfile.primary_type)})`)
     // Top section
-    .replace("[EVOLUTION_STAGE]", cardProfile.evolution_stage)
     .replace("[NAME]", cardProfile.name)
     .replace("[HP]", cardProfile.hp.toString())
     .replace("[PRIMARY_TYPE_ICON]", `${getTypeIcon(cardProfile.primary_type)} ${cardProfile.primary_type}`)
+    .replace("[SECONDARY_TYPE_ICON_SUFFIX]", buildSecondaryTypeIconSuffix(cardProfile))
     .replace("[SUBTITLE]", cardProfile.subtitle)
-    .replace("[SECONDARY_TYPE_ICON_LINE]", buildSecondaryTypeIconLine(cardProfile))
     // Art box
     .replace("[IMAGE_PROMPT]", cardProfile.image_prompt)
     // Ability

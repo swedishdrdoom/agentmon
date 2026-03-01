@@ -171,11 +171,9 @@ CARD FRAME AND LAYOUT:
 - Background gradient matching the [PRIMARY_TYPE_COLOR] color palette
 
 TOP SECTION:
-- Top left: "[EVOLUTION_STAGE]" badge in a rounded pill
-- Center-left: "[NAME]" in large bold trading card font
-- Top right: "[HP] HP" in red/bold, with [PRIMARY_TYPE_ICON] energy icon
+- Left: "[NAME]" in large bold trading card font
+- Right: "[HP] HP" in red/bold, with [PRIMARY_TYPE_ICON] energy icon[SECONDARY_TYPE_ICON_SUFFIX]
 - Below name: "[SUBTITLE]" in smaller italic text
-[SECONDARY_TYPE_ICON_LINE]
 
 ART BOX (center, ~50% of card height):
 - Bordered frame containing the entity portrait

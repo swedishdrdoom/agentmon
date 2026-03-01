@@ -79,20 +79,12 @@ export function CardResult({
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-3 gap-4 text-sm">
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-muted-foreground text-xs uppercase tracking-wider">
               HP
             </p>
             <p className="text-xl font-bold text-red-400">{cardProfile.hp}</p>
-          </div>
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-muted-foreground text-xs uppercase tracking-wider">
-              Stage
-            </p>
-            <p className="text-xl font-bold">
-              {cardProfile.evolution_stage}
-            </p>
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-muted-foreground text-xs uppercase tracking-wider">
