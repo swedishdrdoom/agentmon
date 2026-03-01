@@ -43,6 +43,17 @@ export default function GeneratePage() {
         body: formData,
       });
 
+      // Guard against non-JSON responses (e.g. Vercel timeout HTML/text pages)
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          response.status === 504
+            ? "Request timed out. Try again."
+            : `Server error (${response.status}): ${text.slice(0, 120)}`
+        );
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -63,14 +74,16 @@ export default function GeneratePage() {
     setRarityResults(initial);
     setViewState("all-rarities");
 
-    // Fire all 7 in parallel — each resolves independently
-    const promises = RARITIES.map(async (rarity: Rarity) => {
-      // Mark as generating
+    // Fire in batches of 2 with a small stagger between batches to avoid
+    // hammering API quota and hitting Vercel's 60s function timeout simultaneously.
+    const BATCH_SIZE = 2;
+    const BATCH_DELAY_MS = 4000;
+
+    const runOne = async (rarity: Rarity) => {
       setRarityResults((prev) =>
         prev.map((r) => (r.rarity === rarity ? { ...r, status: "generating" } : r))
       );
 
-      // Clone base form data and force the rarity
       const fd = new FormData();
       for (const [key, value] of baseFormData.entries()) {
         fd.set(key, value as string);
@@ -82,12 +95,7 @@ export default function GeneratePage() {
         setRarityResults((prev) =>
           prev.map((r) =>
             r.rarity === rarity
-              ? {
-                  ...r,
-                  status: "done",
-                  card_image: data.card_image,
-                  card_profile: data.card_profile,
-                }
+              ? { ...r, status: "done", card_image: data.card_image, card_profile: data.card_profile }
               : r
           )
         );
@@ -99,9 +107,15 @@ export default function GeneratePage() {
           )
         );
       }
-    });
+    };
 
-    await Promise.allSettled(promises);
+    for (let i = 0; i < RARITIES.length; i += BATCH_SIZE) {
+      const batch = RARITIES.slice(i, i + BATCH_SIZE) as Rarity[];
+      await Promise.allSettled(batch.map(runOne));
+      if (i + BATCH_SIZE < RARITIES.length) {
+        await new Promise((res) => setTimeout(res, BATCH_DELAY_MS));
+      }
+    }
   }, [generateCard]);
 
   const handleRegenerate = useCallback(async () => {
