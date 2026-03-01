@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { nanoid } from "nanoid";
 import { lookupSkills } from "@/lib/skills-db";
 import { generateCardProfile } from "@/lib/llm";
 import { assemblePrompt, getLayoutVersion } from "@/lib/assemble-prompt";
@@ -6,6 +7,8 @@ import { generateCardImage } from "@/lib/image-gen";
 import { getNextSerialNumber } from "@/lib/serial";
 import { rollRarity } from "@/lib/rarity";
 import { saveGeneratedImage } from "@/lib/save-image";
+import { uploadCardImage } from "@/lib/storage";
+import { saveCard } from "@/lib/db";
 import { parseGenerateFormData } from "@/lib/parse-form-data";
 import { handleRouteError } from "@/lib/route-helpers";
 import { RARITIES, type Rarity } from "@/lib/types";
@@ -55,7 +58,26 @@ export async function POST(request: Request) {
 
     saveGeneratedImage(cardImageBase64, fullProfile);
 
+    // Persist card to database + blob storage (non-blocking if not configured)
+    const cardId = nanoid(12);
+    let unboxUrl: string | null = null;
+
+    try {
+      const imageUrl = await uploadCardImage(cardImageBase64, fullProfile, cardId);
+      if (imageUrl) {
+        await saveCard(cardId, fullProfile, imagePrompt, imageUrl);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://agentmon.com";
+        unboxUrl = `${appUrl}/unbox/${cardId}`;
+        console.log(`[generate] Card persisted: ${unboxUrl}`);
+      }
+    } catch (persistError) {
+      // Non-fatal — card was still generated, just not persisted
+      console.warn("[generate] Failed to persist card:", persistError);
+    }
+
     return NextResponse.json({
+      card_id: cardId,
+      unbox_url: unboxUrl,
       card_image: cardImageBase64,
       card_profile: fullProfile,
       image_prompt: imagePrompt,
