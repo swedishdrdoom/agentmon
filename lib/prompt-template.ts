@@ -163,7 +163,9 @@ export const CARD_LAYOUT_TEMPLATE = `CRITICAL ORIENTATION CONSTRAINT: This image
 
 ART STYLE: Painted illustration — rich textures, dramatic lighting, painterly brushwork. Fantasy world where magic flows through creatures and the land. NEVER cartoon. NEVER anime. NEVER stock-photo digital art. NEVER photo-realistic. NEVER floating UI, holographic screens, or digital overlays.
 
-Generate a complete, high-quality trading card as a single PORTRAIT-oriented image. The card must include ALL of the following elements rendered as part of the image, with text clearly readable:
+[RARITY_TREATMENT]
+
+Generate a complete, high-quality trading card as a single PORTRAIT-oriented image. The card must include ALL of the following elements rendered as part of the image, with text clearly readable. Apply the rarity treatment described above to every element of this card — frame, border, art box, card surface, and artwork intensity.
 
 CARD FRAME AND LAYOUT:
 - Standard trading card proportions (2.5 × 3.5 inch ratio, VERTICAL/PORTRAIT)
@@ -197,14 +199,6 @@ VISUAL QUALITY:
 - Professional trading card game quality
 - All text must be sharp and readable
 - Consistent lighting and color grading throughout
-- CRITICAL: This card is [RARITY] rarity. Apply ONLY the matching visual treatment below. Higher tiers MUST look more visually spectacular than lower tiers:
-  - Common (●): Clean flat border, no special effects, standard card stock appearance
-  - Uncommon (◆): Thin metallic silver border edge, slightly richer color saturation than Common
-  - Rare (★): Gold metallic border, subtle rainbow foil sheen visible on the border only
-  - Epic (★★): Thick gold metallic frame, holographic rainbow sheen across the border and card edges, foil texture on the name banner
-  - Legendary (★★★): Ornate embossed gold frame with filigree, FULL ART — the entity portrait extends beyond the art box and bleeds into the card frame, holographic foil across the entire card surface
-  - Hyper Rare (✦): FULL ART with entity filling the entire card, platinum and prismatic rainbow frame that radiates light, intense holographic rainbow effect covering every surface of the card, glowing energy emanating from the card edges, the most visually spectacular card possible — it should look like it is literally glowing
-  - Singularity (◉): INVERTED color palette — dark becomes light, light becomes dark. Ethereal void-like rendering. Entity appears as luminous negative, like a photographic inverse glowing against darkness. Prismatic iridescent frame with chromatic aberration. The card should look like it exists in a different dimension.
-- Apply the [RARITY] treatment now. Remember: [RARITY] must look visually SUPERIOR to all tiers below it.
+- CRITICAL: Apply the rarity treatment described at the top of this prompt to the card's frame, border, surface, and artwork. This is the single most important visual differentiator.
 
 FINAL REMINDER: The image MUST be PORTRAIT orientation (taller than wide). This is a vertical trading card.`;
