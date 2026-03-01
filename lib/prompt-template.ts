@@ -197,14 +197,14 @@ VISUAL QUALITY:
 - Professional trading card game quality
 - All text must be sharp and readable
 - Consistent lighting and color grading throughout
-- CRITICAL: This card is [RARITY] rarity. Apply the corresponding visual treatment:
-  - Common (●): Clean flat border, no effects, standard card
-  - Uncommon (◆): Subtle metallic border sheen, richer colors
-  - Rare (★): Holographic rainbow shimmer on border, foil texture
-  - Epic (★★): Gold/silver metallic frame, full holographic effect across card
-  - Legendary (★★★): Ornate gold frame, FULL ART — portrait extends beyond art box into frame
-  - Hyper Rare (✦): Prismatic frame, alternate art style, maximum spectacle, iridescent shimmer
-  - Singularity (◉): INVERTED color palette — dark becomes light, light becomes dark. Ethereal void-like rendering. Entity appears as luminous negative. Prismatic iridescent frame with chromatic aberration.
-- Apply the [RARITY] treatment now.
+- CRITICAL: This card is [RARITY] rarity. Apply ONLY the matching visual treatment below. Higher tiers MUST look more visually spectacular than lower tiers:
+  - Common (●): Clean flat border, no special effects, standard card stock appearance
+  - Uncommon (◆): Thin metallic silver border edge, slightly richer color saturation than Common
+  - Rare (★): Gold metallic border, subtle rainbow foil sheen visible on the border only
+  - Epic (★★): Thick gold metallic frame, holographic rainbow sheen across the border and card edges, foil texture on the name banner
+  - Legendary (★★★): Ornate embossed gold frame with filigree, FULL ART — the entity portrait extends beyond the art box and bleeds into the card frame, holographic foil across the entire card surface
+  - Hyper Rare (✦): FULL ART with entity filling the entire card, platinum and prismatic rainbow frame that radiates light, intense holographic rainbow effect covering every surface of the card, glowing energy emanating from the card edges, the most visually spectacular card possible — it should look like it is literally glowing
+  - Singularity (◉): INVERTED color palette — dark becomes light, light becomes dark. Ethereal void-like rendering. Entity appears as luminous negative, like a photographic inverse glowing against darkness. Prismatic iridescent frame with chromatic aberration. The card should look like it exists in a different dimension.
+- Apply the [RARITY] treatment now. Remember: [RARITY] must look visually SUPERIOR to all tiers below it.
 
 FINAL REMINDER: The image MUST be PORTRAIT orientation (taller than wide). This is a vertical trading card.`;
