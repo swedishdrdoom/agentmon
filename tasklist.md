@@ -2,7 +2,7 @@
 
 ## Reminders
 
-- [ ] Add Clarity project ID to `NEXT_PUBLIC_CLARITY_ID` env var (stub is wired up, just needs the key)
+- [x] Add Clarity project ID to `NEXT_PUBLIC_CLARITY_ID` env var — `vox4cex07l`
 
 ---
 
