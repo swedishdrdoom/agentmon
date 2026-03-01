@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { FileUploader } from "@/components/FileUploader";
 import { GeneratingState } from "@/components/GeneratingState";
 import { CardResult } from "@/components/CardResult";
+import { AllRaritiesResult, type RarityCardResult } from "@/components/AllRaritiesResult";
 import { parseAgentFiles } from "@/lib/parser";
-import type { FullCardProfile } from "@/lib/types";
+import { RARITIES, type FullCardProfile, type Rarity } from "@/lib/types";
 
-type ViewState = "upload" | "generating" | "result" | "error";
+type ViewState = "upload" | "generating" | "result" | "all-rarities" | "error";
 
 interface GenerationResult {
   card_image: string;
@@ -23,9 +24,17 @@ export default function GeneratePage() {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [rarityResults, setRarityResults] = useState<RarityCardResult[]>([]);
 
   // Store parsed data so we can reuse it for regeneration
   const [lastParsedData, setLastParsedData] = useState<FormData | null>(null);
+
+  // Detect ?test=all-rarities URL param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsTestMode(params.get("test") === "all-rarities");
+  }, []);
 
   const generateCard = useCallback(
     async (formData: FormData) => {
@@ -44,6 +53,73 @@ export default function GeneratePage() {
     },
     []
   );
+
+  const handleGenerateAllRarities = useCallback(async (baseFormData: FormData) => {
+    // Initialise all slots as pending
+    const initial: RarityCardResult[] = RARITIES.map((rarity) => ({
+      rarity,
+      status: "pending",
+    }));
+    setRarityResults(initial);
+    setViewState("all-rarities");
+
+    // Fire all 7 in parallel — each resolves independently
+    const promises = RARITIES.map(async (rarity: Rarity) => {
+      // Mark as generating
+      setRarityResults((prev) =>
+        prev.map((r) => (r.rarity === rarity ? { ...r, status: "generating" } : r))
+      );
+
+      // Clone base form data and force the rarity
+      const fd = new FormData();
+      for (const [key, value] of baseFormData.entries()) {
+        fd.set(key, value as string);
+      }
+      fd.set("force_rarity", rarity);
+
+      try {
+        const data = await generateCard(fd);
+        setRarityResults((prev) =>
+          prev.map((r) =>
+            r.rarity === rarity
+              ? {
+                  ...r,
+                  status: "done",
+                  card_image: data.card_image,
+                  card_profile: data.card_profile,
+                }
+              : r
+          )
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Generation failed";
+        setRarityResults((prev) =>
+          prev.map((r) =>
+            r.rarity === rarity ? { ...r, status: "error", error: message } : r
+          )
+        );
+      }
+    });
+
+    await Promise.allSettled(promises);
+  }, [generateCard]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!lastParsedData) return;
+
+    setIsRegenerating(true);
+    try {
+      const data = await generateCard(lastParsedData);
+      setResult(data);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Regeneration failed";
+      setError(message);
+      setViewState("error");
+    } finally {
+      setIsRegenerating(false);
+    }
+  }, [lastParsedData, generateCard]);
 
   const handleGenerate = useCallback(async () => {
     if (files.length === 0) return;
@@ -86,33 +162,20 @@ export default function GeneratePage() {
 
       setLastParsedData(formData);
 
-      const data = await generateCard(formData);
-      setResult(data);
-      setViewState("result");
+      if (isTestMode) {
+        await handleGenerateAllRarities(formData);
+      } else {
+        const data = await generateCard(formData);
+        setResult(data);
+        setViewState("result");
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred";
       setError(message);
       setViewState("error");
     }
-  }, [files, generateCard]);
-
-  const handleRegenerate = useCallback(async () => {
-    if (!lastParsedData) return;
-
-    setIsRegenerating(true);
-    try {
-      const data = await generateCard(lastParsedData);
-      setResult(data);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Regeneration failed";
-      setError(message);
-      setViewState("error");
-    } finally {
-      setIsRegenerating(false);
-    }
-  }, [lastParsedData, generateCard]);
+  }, [files, generateCard, isTestMode, handleGenerateAllRarities]);
 
   const handleStartOver = useCallback(() => {
     setViewState("upload");
@@ -121,6 +184,7 @@ export default function GeneratePage() {
     setError(null);
     setLastParsedData(null);
     setIsRegenerating(false);
+    setRarityResults([]);
   }, []);
 
   return (
@@ -144,7 +208,7 @@ export default function GeneratePage() {
 
       {/* Content */}
       <main className="flex-1 px-6 py-12">
-        <div className="max-w-4xl mx-auto">
+        <div className={viewState === "all-rarities" ? "max-w-6xl mx-auto" : "max-w-4xl mx-auto"}>
           {/* Upload state */}
           {viewState === "upload" && (
             <div className="space-y-8">
@@ -156,6 +220,15 @@ export default function GeneratePage() {
                 </p>
               </div>
 
+              {/* Test mode banner */}
+              {isTestMode && (
+                <div className="max-w-md mx-auto bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3 text-center">
+                  <p className="text-xs text-yellow-400 font-medium">
+                    Test mode: Generate All Rarities — will produce 7 cards in parallel, one per rarity tier.
+                  </p>
+                </div>
+              )}
+
               <FileUploader files={files} onFilesSelected={setFiles} />
 
               <div className="flex justify-center">
@@ -164,7 +237,7 @@ export default function GeneratePage() {
                   disabled={files.length === 0}
                   className="px-8 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-lg hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
                 >
-                  Generate Card
+                  {isTestMode ? "Generate All 7 Rarities" : "Generate Card"}
                 </button>
               </div>
 
@@ -212,6 +285,14 @@ export default function GeneratePage() {
 
           {/* Generating state */}
           {viewState === "generating" && <GeneratingState />}
+
+          {/* All-rarities test state */}
+          {viewState === "all-rarities" && (
+            <AllRaritiesResult
+              results={rarityResults}
+              onStartOver={handleStartOver}
+            />
+          )}
 
           {/* Result state */}
           {viewState === "result" && result && (
