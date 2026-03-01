@@ -3,6 +3,11 @@ import { CardProfileSchema, TYPE_METADATA, type CardProfile, type CardType, type
 import { CARD_PROFILE_SYSTEM_PROMPT } from "./prompt-template";
 import { hasExpandedVariance } from "./rarity";
 
+// ── Exported Pure Helpers (for testing) ───────────────────────────────
+// These are also used internally by generateCardProfile().
+
+export { sanitizeBrandNames, enforceEnergyCost, parseDamageNumber, computeStatBudget, clampStats };
+
 // ── Brand Name Sanitization ──────────────────────────────────────────
 
 const BRAND_BLACKLIST = [
@@ -119,7 +124,7 @@ function enforceEnergyCost(profile: CardProfile): CardProfile {
 // ── Stat Utilities ───────────────────────────────────────────────────
 
 function parseDamageNumber(damage: string): number {
-  // "100+" → 100, "80" → 80, "30×2" → 60
+  // "100+" → 100, "80" → 80, "30×2" → 30 (leading integer only)
   const match = damage.match(/^(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
 }

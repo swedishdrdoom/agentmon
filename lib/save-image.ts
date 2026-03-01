@@ -20,11 +20,11 @@ function shouldSave(): boolean {
   );
 }
 
-function sanitizeFilename(str: string): string {
+export function sanitizeFilename(str: string): string {
   return str.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").slice(0, 40);
 }
 
-function detectExtension(base64: string): string {
+export function detectExtension(base64: string): string {
   // Peek at the first few bytes of the base64 payload to detect format
   const prefix = base64.slice(0, 16);
   const bytes = Buffer.from(prefix, "base64");

@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const EXAMPLE_TYPES = [
-  { icon: "🛡️", type: "Steel", name: "Sentinel", hp: 160, rarity: "Secret Rare" },
+  { icon: "🛡️", type: "Steel", name: "Sentinel", hp: 160, rarity: "Legendary" },
   { icon: "⚡", type: "Electric", name: "Sparkline", hp: 120, rarity: "Rare" },
-  { icon: "🐉", type: "Dragon", name: "Orchestron", hp: 180, rarity: "Ultra Rare" },
+  { icon: "🐉", type: "Dragon", name: "Orchestron", hp: 180, rarity: "Hyper Rare" },
   { icon: "👻", type: "Ghost", name: "Shade", hp: 100, rarity: "Uncommon" },
 ];
 

@@ -1,6 +1,17 @@
 import JSZip from "jszip";
 import type { ParsedInput, ContentDepth } from "./types";
 
+// ── Exported Pure Helpers (for testing) ───────────────────────────────
+
+export {
+  isSensitiveFile,
+  redactSecrets,
+  extractAgentName,
+  extractSkillSlugs,
+  calculateContentDepth,
+  generateNameNumber,
+};
+
 // ── File text extraction ─────────────────────────────────────────────
 
 const TEXT_EXTENSIONS = [".md", ".txt", ".json", ".yaml", ".yml"];
@@ -238,15 +249,6 @@ const COMMON_WORDS = new Set([
  * Count how many distinct tools/MCPs the agent references.
  */
 function countTools(rawText: string): number {
-  const toolPatterns = [
-    /mcp[-_]?server/gi,
-    /tool[-_]?name/gi,
-    /\btool:\s/gi,
-    /function[-_]call/gi,
-    /api[-_]?key/gi,
-    /endpoint/gi,
-  ];
-
   const toolRefs = new Set<string>();
 
   // MCP server references
@@ -424,38 +426,4 @@ export async function parseAgentFiles(files: File[]): Promise<ParsedInput> {
   };
 }
 
-/**
- * Server-side variant: parse from raw text + file names
- * (when files have already been read on the client and sent as text).
- */
-export function parseFromRawText(
-  rawText: string,
-  fileNames: string[]
-): Omit<ParsedInput, "raw_text" | "file_names"> {
-  // Split raw text back into individual files for name extraction
-  const files = rawText.split(/--- FILE: .+ ---\n/).filter(Boolean);
-  const extracted = fileNames.map((name, i) => ({
-    name,
-    content: files[i] || "",
-  }));
 
-  const totalContentLength = extracted.reduce(
-    (sum, f) => sum + f.content.length,
-    0
-  );
-  const fileCount = extracted.length;
-
-  return {
-    agent_name: resolveAgentName(extracted, rawText),
-    skill_slugs: extractSkillSlugs(rawText),
-    has_security_rules: hasSecurityRules(rawText),
-    has_cron_tasks: hasCronTasks(rawText),
-    has_memory_system: hasMemorySystem(rawText),
-    has_subagent_orchestration: hasSubagentOrchestration(rawText),
-    has_multi_machine_setup: hasMultiMachineSetup(rawText),
-    tool_count: countTools(rawText),
-    content_depth: calculateContentDepth(totalContentLength, fileCount),
-    total_content_length: totalContentLength,
-    file_count: fileCount,
-  };
-}

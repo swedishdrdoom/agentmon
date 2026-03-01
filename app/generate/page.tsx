@@ -36,36 +36,7 @@ export default function GeneratePage() {
     setIsTestMode(params.get("test") === "all-rarities");
   }, []);
 
-  const generateCard = useCallback(
-    async (formData: FormData) => {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        body: formData,
-      });
-
-      // Guard against non-JSON responses (e.g. Vercel timeout HTML/text pages)
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!contentType.includes("application/json")) {
-        const text = await response.text();
-        throw new Error(
-          response.status === 504
-            ? "Request timed out. Try again."
-            : `Server error (${response.status}): ${text.slice(0, 120)}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Generation failed: ${response.status}`);
-      }
-
-      return data as GenerationResult;
-    },
-    []
-  );
-
-  // Helper: fetch with safe JSON handling
+  // Safe JSON fetch — guards against non-JSON responses (e.g. Vercel timeout pages)
   const safeFetchJSON = useCallback(async (url: string, init: RequestInit) => {
     const response = await fetch(url, init);
 
@@ -85,6 +56,12 @@ export default function GeneratePage() {
     }
     return data;
   }, []);
+
+  const generateCard = useCallback(
+    (formData: FormData) =>
+      safeFetchJSON("/api/generate", { method: "POST", body: formData }) as Promise<GenerationResult>,
+    [safeFetchJSON]
+  );
 
   const handleGenerateAllRarities = useCallback(async (baseFormData: FormData) => {
     // Initialise all slots as pending

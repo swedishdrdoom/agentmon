@@ -80,7 +80,7 @@ function buildAttackRows(profile: FullCardProfile): string {
   return rows.join("\n");
 }
 
-function buildRetreatDots(retreatCost: number): string {
+export function buildRetreatDots(retreatCost: number): string {
   if (retreatCost === 0) return "none (free retreat)";
   return Array(retreatCost).fill("⚪").join(" ");
 }
@@ -94,33 +94,33 @@ function buildRetreatDots(retreatCost: number): string {
 export function assemblePrompt(cardProfile: FullCardProfile): string {
   const prompt = CARD_LAYOUT_TEMPLATE
     // Rarity treatment — injected early, only the matching tier
-    .replace("[RARITY_TREATMENT]", RARITY_TREATMENTS[cardProfile.rarity])
+    .replaceAll("[RARITY_TREATMENT]", RARITY_TREATMENTS[cardProfile.rarity])
     // Border
-    .replace("[BORDER_STYLE]", buildBorderStyle(cardProfile))
+    .replaceAll("[BORDER_STYLE]", buildBorderStyle(cardProfile))
     // Type colors
-    .replace("[PRIMARY_TYPE_COLOR]", `${cardProfile.primary_type} (${getTypeColor(cardProfile.primary_type)}, ${getTypeHex(cardProfile.primary_type)})`)
+    .replaceAll("[PRIMARY_TYPE_COLOR]", `${cardProfile.primary_type} (${getTypeColor(cardProfile.primary_type)}, ${getTypeHex(cardProfile.primary_type)})`)
     // Top section
-    .replace("[NAME]", cardProfile.name)
-    .replace("[HP]", cardProfile.hp.toString())
-    .replace("[PRIMARY_TYPE_ICON]", `${getTypeIcon(cardProfile.primary_type)} ${cardProfile.primary_type}`)
-    .replace("[SECONDARY_TYPE_ICON_SUFFIX]", buildSecondaryTypeIconSuffix(cardProfile))
-    .replace("[SUBTITLE]", cardProfile.subtitle)
+    .replaceAll("[NAME]", cardProfile.name)
+    .replaceAll("[HP]", cardProfile.hp.toString())
+    .replaceAll("[PRIMARY_TYPE_ICON]", `${getTypeIcon(cardProfile.primary_type)} ${cardProfile.primary_type}`)
+    .replaceAll("[SECONDARY_TYPE_ICON_SUFFIX]", buildSecondaryTypeIconSuffix(cardProfile))
+    .replaceAll("[SUBTITLE]", cardProfile.subtitle)
     // Art box
-    .replace("[IMAGE_PROMPT]", cardProfile.image_prompt)
+    .replaceAll("[IMAGE_PROMPT]", cardProfile.image_prompt)
     // Ability
-    .replace("[ABILITY_NAME]", cardProfile.ability.name)
-    .replace("[ABILITY_DESCRIPTION]", cardProfile.ability.description)
+    .replaceAll("[ABILITY_NAME]", cardProfile.ability.name)
+    .replaceAll("[ABILITY_DESCRIPTION]", cardProfile.ability.description)
     // Attacks
-    .replace("[ATTACK_ROWS]", buildAttackRows(cardProfile))
+    .replaceAll("[ATTACK_ROWS]", buildAttackRows(cardProfile))
     // Bottom stats
-    .replace("[WEAKNESS_TYPE_ICON]", `${getTypeIcon(cardProfile.weakness.type as CardType)} ${cardProfile.weakness.type}`)
-    .replace("[RESISTANCE_TYPE_ICON]", `${getTypeIcon(cardProfile.resistance.type as CardType)} ${cardProfile.resistance.type}`)
-    .replace("[RETREAT_DOTS]", buildRetreatDots(cardProfile.retreat_cost))
+    .replaceAll("[WEAKNESS_TYPE_ICON]", `${getTypeIcon(cardProfile.weakness.type)} ${cardProfile.weakness.type}`)
+    .replaceAll("[RESISTANCE_TYPE_ICON]", `${getTypeIcon(cardProfile.resistance.type)} ${cardProfile.resistance.type}`)
+    .replaceAll("[RETREAT_DOTS]", buildRetreatDots(cardProfile.retreat_cost))
     // Footer
-    .replace("[SERIAL_NUMBER]", String(cardProfile.serial_number))
-    .replace("[ILLUSTRATOR]", cardProfile.illustrator)
-    .replace("[RARITY_SYMBOL]", RARITY_SYMBOLS[cardProfile.rarity])
-    .replace("[FLAVOR_TEXT]", cardProfile.flavor_text);
+    .replaceAll("[SERIAL_NUMBER]", String(cardProfile.serial_number))
+    .replaceAll("[ILLUSTRATOR]", cardProfile.illustrator)
+    .replaceAll("[RARITY_SYMBOL]", RARITY_SYMBOLS[cardProfile.rarity])
+    .replaceAll("[FLAVOR_TEXT]", cardProfile.flavor_text);
 
   return prompt;
 }
