@@ -32,7 +32,7 @@ export function CardResult({
       <div className="flex justify-center">
         <div className="relative group">
           <img
-            src={`data:image/png;base64,${cardImageBase64}`}
+            src={`data:image/jpeg;base64,${cardImageBase64}`}
             alt={`${cardProfile.name} trading card`}
             className="max-w-sm w-full rounded-xl shadow-2xl shadow-primary/10 border border-white/5"
           />

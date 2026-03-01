@@ -5,10 +5,12 @@ import { assemblePrompt, getLayoutVersion } from "@/lib/assemble-prompt";
 import { generateCardImage } from "@/lib/image-gen";
 import { getNextSerialNumber } from "@/lib/serial";
 import { rollRarity } from "@/lib/rarity";
+import { saveGeneratedImage } from "@/lib/save-image";
 import { RARITIES, type Rarity } from "@/lib/types";
 
-// Allow up to 60 seconds for the full pipeline (LLM + image gen)
-export const maxDuration = 60;
+// Allow up to 120 seconds for the full pipeline (LLM + image gen).
+// Requires Vercel Pro plan or higher. On hobby plan this caps at 60s.
+export const maxDuration = 120;
 
 export async function POST(request: Request) {
   try {
@@ -93,6 +95,9 @@ export async function POST(request: Request) {
 
     // ── Generate card image via Nano Banana ──────────────────────────
     const cardImageBase64 = await generateCardImage(imagePrompt);
+
+    // ── Save image to local filesystem (dev + opt-in prod) ───────────
+    saveGeneratedImage(cardImageBase64, cardProfileWithSerial);
 
     // ── Return everything ────────────────────────────────────────────
     return NextResponse.json({

@@ -70,7 +70,7 @@ function RarityCardSlot({ result }: { result: RarityCardResult }) {
       <div className="aspect-[5/7] rounded-xl overflow-hidden border border-border bg-muted/30 relative flex items-center justify-center">
         {result.status === "done" && result.card_image ? (
           <img
-            src={`data:image/png;base64,${result.card_image}`}
+            src={`data:image/jpeg;base64,${result.card_image}`}
             alt={`${result.rarity} rarity card`}
             className="w-full h-full object-cover"
           />
@@ -78,7 +78,9 @@ function RarityCardSlot({ result }: { result: RarityCardResult }) {
           <div className="text-center p-4 space-y-2">
             <p className="text-2xl">⚠️</p>
             <p className="text-xs text-destructive font-mono break-words">
-              {result.error ?? "Unknown error"}
+              {result.error?.includes("Server Components")
+                ? "Request timed out. Try again."
+                : result.error ?? "Unknown error"}
             </p>
           </div>
         ) : (
