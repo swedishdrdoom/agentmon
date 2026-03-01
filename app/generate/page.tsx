@@ -65,6 +65,27 @@ export default function GeneratePage() {
     []
   );
 
+  // Helper: fetch with safe JSON handling
+  const safeFetchJSON = useCallback(async (url: string, init: RequestInit) => {
+    const response = await fetch(url, init);
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      const text = await response.text();
+      throw new Error(
+        response.status === 504
+          ? "Request timed out. Try again."
+          : `Server error (${response.status}): ${text.slice(0, 120)}`
+      );
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || `Request failed: ${response.status}`);
+    }
+    return data;
+  }, []);
+
   const handleGenerateAllRarities = useCallback(async (baseFormData: FormData) => {
     // Initialise all slots as pending
     const initial: RarityCardResult[] = RARITIES.map((rarity) => ({
@@ -74,24 +95,42 @@ export default function GeneratePage() {
     setRarityResults(initial);
     setViewState("all-rarities");
 
-    // Fire in batches of 2 with a small stagger between batches to avoid
-    // hammering API quota and hitting Vercel's 60s function timeout simultaneously.
+    // ── Phase 1: Call Claude ONCE to get the base card profile (~15s) ──
+    let baseProfile;
+    try {
+      const profileData = await safeFetchJSON("/api/generate-profile", {
+        method: "POST",
+        body: baseFormData,
+      });
+      baseProfile = profileData.card_profile;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Profile generation failed";
+      // Mark all slots as failed
+      setRarityResults((prev) =>
+        prev.map((r) => ({ ...r, status: "error" as const, error: message }))
+      );
+      return;
+    }
+
+    // ── Phase 2: Generate images for each rarity via Gemini (~20s each) ──
+    // Batch 2 at a time with stagger to avoid Gemini quota issues.
     const BATCH_SIZE = 2;
-    const BATCH_DELAY_MS = 4000;
+    const BATCH_DELAY_MS = 2000;
 
     const runOne = async (rarity: Rarity) => {
       setRarityResults((prev) =>
         prev.map((r) => (r.rarity === rarity ? { ...r, status: "generating" } : r))
       );
 
-      const fd = new FormData();
-      for (const [key, value] of baseFormData.entries()) {
-        fd.set(key, value as string);
-      }
-      fd.set("force_rarity", rarity);
-
       try {
-        const data = await generateCard(fd);
+        const data = await safeFetchJSON("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            card_profile: baseProfile,
+            rarity_override: rarity,
+          }),
+        });
         setRarityResults((prev) =>
           prev.map((r) =>
             r.rarity === rarity
@@ -100,7 +139,7 @@ export default function GeneratePage() {
           )
         );
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Generation failed";
+        const message = err instanceof Error ? err.message : "Image generation failed";
         setRarityResults((prev) =>
           prev.map((r) =>
             r.rarity === rarity ? { ...r, status: "error", error: message } : r
@@ -116,7 +155,7 @@ export default function GeneratePage() {
         await new Promise((res) => setTimeout(res, BATCH_DELAY_MS));
       }
     }
-  }, [generateCard]);
+  }, [safeFetchJSON]);
 
   const handleRegenerate = useCallback(async () => {
     if (!lastParsedData) return;

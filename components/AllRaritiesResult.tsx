@@ -17,7 +17,20 @@ interface AllRaritiesResultProps {
 
 export function AllRaritiesResult({ results, onStartOver }: AllRaritiesResultProps) {
   const doneCount = results.filter((r) => r.status === "done").length;
+  const errorCount = results.filter((r) => r.status === "error").length;
+  const generatingCount = results.filter((r) => r.status === "generating").length;
+  const allPending = results.every((r) => r.status === "pending");
   const total = RARITIES.length;
+
+  // Phase label
+  let phaseLabel: string;
+  if (allPending) {
+    phaseLabel = "Generating card profile...";
+  } else if (doneCount + errorCount === total) {
+    phaseLabel = `Done — ${doneCount} succeeded, ${errorCount} failed`;
+  } else {
+    phaseLabel = `${doneCount} / ${total} cards generated${generatingCount > 0 ? `, ${generatingCount} in progress` : ""}`;
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-8">
@@ -26,7 +39,7 @@ export function AllRaritiesResult({ results, onStartOver }: AllRaritiesResultPro
         <div>
           <h2 className="text-2xl font-bold">All Rarities Test</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {doneCount} / {total} cards generated
+            {phaseLabel}
           </p>
         </div>
         <button
@@ -41,7 +54,7 @@ export function AllRaritiesResult({ results, onStartOver }: AllRaritiesResultPro
       <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
         <div
           className="bg-primary h-full rounded-full transition-all duration-500"
-          style={{ width: `${(doneCount / total) * 100}%` }}
+          style={{ width: `${((doneCount + errorCount) / total) * 100}%` }}
         />
       </div>
 
