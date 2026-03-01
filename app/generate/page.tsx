@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import NavBar from "@/components/NavBar";
 import { FileUploader } from "@/components/FileUploader";
 import { GeneratingState } from "@/components/GeneratingState";
 import { CardResult } from "@/components/CardResult";
@@ -12,6 +14,8 @@ import { RARITIES, type FullCardProfile, type Rarity } from "@/lib/types";
 type ViewState = "upload" | "generating" | "result" | "all-rarities" | "error";
 
 interface GenerationResult {
+  card_id?: string;
+  unbox_url?: string | null;
   card_image: string;
   card_profile: FullCardProfile;
   image_prompt: string;
@@ -19,6 +23,7 @@ interface GenerationResult {
 }
 
 export default function GeneratePage() {
+  const router = useRouter();
   const [viewState, setViewState] = useState<ViewState>("upload");
   const [files, setFiles] = useState<File[]>([]);
   const [result, setResult] = useState<GenerationResult | null>(null);
@@ -196,6 +201,11 @@ export default function GeneratePage() {
         await handleGenerateAllRarities(formData);
       } else {
         const data = await generateCard(formData);
+        // Redirect to unbox page if card was persisted, otherwise show inline
+        if (data.unbox_url) {
+          router.push(data.unbox_url);
+          return;
+        }
         setResult(data);
         setViewState("result");
       }
@@ -219,22 +229,7 @@ export default function GeneratePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold hover:text-primary transition-colors">
-            Agentmon <span className="text-sm text-muted-foreground font-normal">v1.3</span>
-          </Link>
-          {viewState !== "upload" && (
-            <button
-              onClick={handleStartOver}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Start Over
-            </button>
-          )}
-        </div>
-      </header>
+      <NavBar />
 
       {/* Content */}
       <main className="flex-1 px-6 py-12">
